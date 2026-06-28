@@ -96,12 +96,12 @@ export default function BrowseLawyersPage() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-[#0d0d0d] border border-gray-300 dark:border-neutral-800 p-4 rounded-xl shadow-md w-full">
+        <div className="flex  flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-[#0d0d0d] border border-gray-300 dark:border-neutral-800 p-4 rounded-xl shadow-md w-full">
           
           {/* Search box */}
           <div className="relative w-full md:max-w-md">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-zinc-500">
-              <Magnifier className="w-4 h-4" />
+            <span className=" w-5 h-5  absolute border-3 border-black bott left-7 flex items-center pl-3 pointer-events-none cursor-crosshair text-zinc-500">
+              <Magnifier className="bg-black border-black text-black w-5 h-5" />
             </span>
             <input 
               type="text"
@@ -149,10 +149,10 @@ export default function BrowseLawyersPage() {
             {[...Array(8)].map((_, idx) => <LawyerSkeleton key={idx} />)}
           </div>
         ) : sortedLawyers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center p-12 border border-dashed border-neutral-800 rounded-2xl bg-[#0d0d0d]/40 max-w-md mx-auto space-y-3">
+          <div className="flex flex-col items-center justify-center text-center p-12 dark:border border-dashed border-neutral-800 rounded-2xl bg-white dark:bg-[#0d0d0d]/40 max-w-md mx-auto space-y-3">
             <CircleXmark className="w-8 h-8 text-orange-500/80" />
-            <h3 className="text-lg font-bold text-white">No Advocates Located</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h3 className="text-lg font-bold text-black dark:text-white">No Advocates Located</h3>
+            <p className="text-xs text-black dark:text-zinc-400 leading-relaxed">
               We couldn't track down any verified lawyer records aligning with your active search terms or category adjustments.
             </p>
             <button 
