@@ -6,6 +6,7 @@ import React, {  useState } from "react";
 import { Eye, EyeClosed } from "@gravity-ui/icons";
 import Image from "next/image";
 import Link from "next/link";
+import { authClient } from "../lib/auth-client";
 
 export default function Login() {
   const [isShowPassword, setIsShowPassword] = useState(false);
@@ -13,7 +14,15 @@ export default function Login() {
   const handleSubmit = async (e) => {
     setLoading(true);
     e.preventDefault();
-  
+    const formdata=new FormData(e.currentTarget);
+    const user=Object.fromEntries(formdata)
+    console.log(user)
+  const { data, error } = await authClient.signIn.email({
+    email: user.email, // required
+    password: user.password, // required
+    rememberMe: true,
+    callbackURL: "/",
+});
     }
 
 

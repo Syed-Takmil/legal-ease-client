@@ -16,16 +16,20 @@ import {
   PlanetEarth,
   Dice4
 } from '@gravity-ui/icons';
-import Logo from '../Logo';
 import NavLink from './NavLink';
 import Image from 'next/image';
+import Logo from './Logo';
+import { authClient } from '@/app/lib/auth-client';
 
 export default function Navbar() {
+
+    const { data: session,isPending}=authClient.useSession()
+    const user=session?.user
+    console.log(user)
   const path = usePathname();
   const router = useRouter();             
   const searchParams = useSearchParams(); //  Read current URL params
-const user=false;
-  const [searchQuery, setSearchQuery] = useState(  );
+  const [searchQuery, setSearchQuery] = useState('');
 
   // ✅ Keep search input synced if user changes pages or reloads
   useEffect(() => {
@@ -126,7 +130,7 @@ const user=false;
                 <Image 
                   width={48} 
                   height={48} 
-                  src={user?.image || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKaiKiPcLJj7ufrj6M2KaPwyCT4lDSFA5oog&s"} 
+                  src={user?.image} 
                   alt='profile pic'
                   className='rounded-full w-12 h-12 object-cover border border-neutral-200 dark:border-neutral-800 p-1'
                 />

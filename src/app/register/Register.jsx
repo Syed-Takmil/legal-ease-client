@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import { authClient } from '../lib/auth-client';
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
@@ -10,13 +11,23 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    
-    if (userdata.password !== userdata.confirm) {
+
+     const Formdata = new FormData(e.currentTarget);
+    const userdata = Object.fromEntries(Formdata);
+        if (userdata.password !== userdata.confirm) {
       toast.error("Passwords do not match!");
       setLoading(false);
       return;
     }
+console.log(userdata)
+    const { data, error } = await authClient.signUp.email({
+    name: userdata.name, // required
+    email: userdata.email, // required
+    password: userdata.password, // required
+    role:userdata.role,
+    image: userdata.imageUrl ||"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKaiKiPcLJj7ufrj6M2KaPwyCT4lDSFA5oog&s",
+    callbackURL: "/",
+});
 
       toast.success("Registration Successful");
       setLoading(false);
@@ -27,7 +38,7 @@ export default function Register() {
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-[#0a0a0a] p-3 transition-colors duration-200 dark:text-warning">
       <div className="w-full max-w-md h-fit rounded-2xl bg-base-300 border border-neutral-800 p-6 space-y-4 shadow-2xl text-black dark:text-white">
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 w-full">
           <div>
             <h2 className='text-2xl font-bold text-center dark:text-warning text-black'>
               {loading ? "Creating Account..." : "Create Account"}
@@ -98,7 +109,7 @@ export default function Register() {
 
           {/* OPTIONAL AVATAR PHOTO URL INPUT */}
           <div className="space-y-1">
-            <label className="text-xs text-zinc-400 font-medium">Avatar Photo URL <span className="text-zinc-500 text-[10px] lowercase">(optional)</span></label>
+            <label className="text-xs text-zinc-400 font-medium">Image URL <span className="text-zinc-500 text-[10px] lowercase">(optional)</span></label>
             <input 
               type="url" 
               name="imageUrl"
