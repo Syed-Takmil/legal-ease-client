@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Legal Ease",
+  title: "Home - LegalEase",
   description: "Online Lawyer Hiring Platform",
 };
 
@@ -27,10 +27,12 @@ export default function RootLayout({ children }) {
        suppressHydrationWarning={true} 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-screen flex flex-col">
         <Providers>
         <Navbar/>
-        {children}
+       <main className="flex-1">
+         {children}
+         </main>
         <Footer/>
         <ThemeToggle/>
       </Providers>

@@ -29,8 +29,8 @@ const Footer = () => {
           </div>
 
           {/* Column 2: Quick Links */}
-          <div className="flex flex-col gap-3 lg:ml-25 text-left">
-            <nav className="flex flex-col gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+          <div className="flex justify-center flex-col gap-3 lg:ml-25 text-left">
+            <nav className="flex justify-center flex-col gap-2 text-sm text-neutral-600 dark:text-neutral-400 text-center md:text-left">
               <a href="#about" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">About Us</a>
               <a href="#contact" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">Contact</a>
               <a href="#privacy" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">Privacy Policy</a>
@@ -133,9 +133,9 @@ const Footer = () => {
           <p>
             Copyright © {new Date().getFullYear()} - All rights reserved.
           </p>
-          <p className='text-sm text-neutral-600 dark:text-neutral-400'>
+          {/* <p className='text-sm text-neutral-600 dark:text-neutral-400'>
             Made with ❤️ by <span className='text-md font-bold text-neutral-800 dark:text-neutral-200'>Syed Takmil</span>
-          </p>
+          </p> */}
           <p className="tracking-tight text-neutral-400 dark:text-neutral-600">
             Designed for secure professional legal matchmaking.
           </p>
