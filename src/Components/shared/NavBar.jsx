@@ -20,12 +20,13 @@ import NavLink from './NavLink';
 import Image from 'next/image';
 import Logo from './Logo';
 import { authClient } from '@/app/lib/auth-client';
+import GetUser from '@/app/lib/actions/GetUser';
 
 export default function Navbar() {
 
     const { data: session,isPending}=authClient.useSession()
     const user=session?.user
-    console.log(user)
+ 
   const path = usePathname();
   const router = useRouter();             
   const searchParams = useSearchParams(); //  Read current URL params

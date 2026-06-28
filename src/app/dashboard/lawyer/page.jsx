@@ -4,10 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { authClient } from '@/app/lib/auth-client';
 import { CreditCard, ShieldCheck, Briefcase, Star, Eye } from '@gravity-ui/icons';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { redirect } from 'next/navigation';
 
 export default function LawyerDashboardHome() {
+  
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
+  if(!CheckRole(user?.role)){
+redirect("/unauthorized")
+  }
 
   const [profile, setProfile] = useState(null);
   const [hires, setHires] = useState([]);
