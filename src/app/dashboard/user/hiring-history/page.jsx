@@ -29,11 +29,15 @@ export default function HiringHistoryPage() {
       });
   }, [user?.id, authLoading]);
 
-  const getStatusStyle = (status) => {
-    if (status === 'accepted') return 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60';
-    if (status === 'rejected') return 'bg-red-950/40 text-red-400 border-red-900/60';
-    return 'bg-zinc-900 text-zinc-400 border-neutral-800';
-  };
+const getStatusStyle = (status) => {
+  if (status === 'accepted')
+    return 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
+
+  if (status === 'rejected')
+    return 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60';
+
+  return 'bg-gray-100 text-gray-600 border border-gray-300 dark:bg-zinc-900 dark:text-zinc-400 dark:border-neutral-800';
+};
 
   // Keep the component loading while authentication is initializing
   const isDataLoading = authLoading || loading;
@@ -87,17 +91,22 @@ export default function HiringHistoryPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <button
-                        disabled={record.status !== 'accepted'}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
-                          record.status === 'accepted'
-                            ? 'bg-orange-500 text-black hover:bg-orange-400'
-                            : 'bg-neutral-900 border border-neutral-800 text-zinc-600 cursor-not-allowed'
-                        }`}
-                      >
-                        <CardClub className="w-3.5 h-3.5" /> Pay Now
-                      </button>
-                    </td>
+  <button
+    disabled={
+      record.status !== 'accepted' || record.paid
+    }
+    className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
+      record.paid
+        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 cursor-default'
+        : record.status === 'accepted'
+        ? 'bg-orange-500 text-black hover:bg-orange-400'
+        : 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-zinc-600 cursor-not-allowed'
+    }`}
+  >
+    <CardClub className="w-3.5 h-3.5" />
+    {record.paid ? 'Paid' : 'Pay Now'}
+  </button>
+</td>
                   </tr>
                 ))
               )}
