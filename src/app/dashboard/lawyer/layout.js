@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Gear,  Bars, Xmark } from '@gravity-ui/icons';
+import { Briefcase, Gear,  Bars, Xmark, CardClub } from '@gravity-ui/icons';
 
 export default function LawyerDashboardLayout({ children }) {
   const pathname = usePathname();
@@ -12,9 +12,11 @@ export default function LawyerDashboardLayout({ children }) {
   const menuItems = [
     { name: 'Hiring History', href: '/dashboard/lawyer/hiring-history', icon: Briefcase },
     { name: 'Manage Services', href: '/dashboard/lawyer/manage-legal-profile', icon: Gear },
+    {name:'Transaction History' ,href:'/dashboard/lawyer/transaction-history', icon:CardClub}
   ];
 
-  const SideNavLinks = 
+ 
+ const SideNavLinks = 
     <>
       <div className="px-3 py-4 border-b border-neutral-200 dark:border-neutral-900 mb-4 hidden md:block">
         <p className="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">Counsel Workspace</p>
@@ -41,7 +43,6 @@ export default function LawyerDashboardLayout({ children }) {
         })}
       </nav>
     </>
-
 
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-64px)] transition-colors duration-200">

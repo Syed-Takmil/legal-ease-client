@@ -1,11 +1,12 @@
-
-
-
 'use client';
 
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Briefcase, Comment, LayoutGrid, LayoutCellsLarge, Person } from '@gravity-ui/icons';
-import DashBoard from '@/Components/shared/DashBoard';
- function UserDashboardLayout({ children }) {
+
+export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
 
   const menuItems = [
    
@@ -17,7 +18,31 @@ import DashBoard from '@/Components/shared/DashBoard';
   return (
     <div className="min-h-screen h-full bg-white dark:bg-[#0a0a0a] text-neutral-200 flex pt-16">
       {/* SIDEBAR ARCHITECTURE */}
-     <DashBoard menuItems={menuItems}/>
+      <aside className="w-64 h-full bg-gray-200 min-h-screen dark:bg-[#0d0d0d] border-r border-neutral-900 p-4 hidden md:flex flex-col gap-1 shrink-0">
+        <div className="px-3 py-4 border-b border-neutral-950 mb-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">LegalEase Control Panel</p>
+        </div>
+        <nav className="space-y-1 flex-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 h-11 text-sm font-medium rounded-xl transition-all ${
+                  isActive
+                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                    : 'text-zinc-400 hover:bg-neutral-900 hover:text-white border border-transparent'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
 
       {/* DASHBOARD VIEWS DISPATCHER CONTENT */}
       <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
@@ -26,5 +51,3 @@ import DashBoard from '@/Components/shared/DashBoard';
     </div>
   );
 }
-
-export default UserDashboardLayout;
