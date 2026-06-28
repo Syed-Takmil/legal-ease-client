@@ -9,7 +9,7 @@ export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden text-neutral-200">
+    <div className="min-h-screen text-black bg-white dark:bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden dark:text-neutral-200">
       
       {/* BACKGROUND DECORATION GRAIN & GLOWS */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-orange-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
@@ -28,7 +28,7 @@ export default function NotFound() {
 
         {/* ERROR HEADER & EXPLANATION */}
         <div className="space-y-2 pt-4">
-          <h2 className="text-2xl font-bold text-white tracking-wide">
+          <h2 className="text-2xl font-bold text-black dark:text-white tracking-wide">
             Case Dismissed: Page Not Found
           </h2>
           <p className="text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
@@ -42,7 +42,7 @@ export default function NotFound() {
           {/* Go Back Action Button */}
           <button 
             onClick={() => router.back()}
-            className="btn btn-outline border-neutral-800 text-zinc-300 hover:bg-neutral-900 hover:text-white rounded-xl w-full sm:w-auto flex gap-2 items-center normal-case font-medium text-sm transition-all h-11"
+            className="btn btn-outline border-neutral-800 text-black dark:text-zinc-300 hover:bg-neutral-900 hover:text-white rounded-xl w-full sm:w-auto flex gap-2 items-center normal-case font-medium text-sm transition-all h-11"
           >
             <ChevronLeft className="w-4 h-4" />
             Go Back
@@ -60,9 +60,9 @@ export default function NotFound() {
         </div>
 
         {/* SUBTLE BRAND FOOTER FOOTPRINT */}
-        <div className="pt-12 select-none">
-          <span className="text-[18px] tracking-widest text-zinc-600 font-bold bg-neutral-900/40 px-3 py-1.5 rounded-full border border-neutral-900">
-            <span className='text-white'>Legal</span><span className='text-amber-600'>Ease</span> Security Gate
+        <div className="pt-5 select-none">
+          <span className="text-[18px] tracking-widest dark:text-zinc-600 font-bold dark:bg-neutral-900/40 px-3 py-1.5 rounded-full dark:border dark:border-neutral-900">
+            <span className='text-black dark:text-white'>Legal</span><span className='text-amber-600'>Ease</span> Security Gate
           </span>
         </div>
 

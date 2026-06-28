@@ -6,9 +6,11 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+
+@variant dark (&:where(.dark, .dark *));
 /* Also bind daisyUI/Data Theme selectors to the class toggler */
 .dark {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html, body {

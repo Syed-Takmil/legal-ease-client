@@ -25,7 +25,7 @@ export default function Navbar() {
   const router = useRouter();             
   const searchParams = useSearchParams(); //  Read current URL params
 const user=false;
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(  );
 
   // ✅ Keep search input synced if user changes pages or reloads
   useEffect(() => {
