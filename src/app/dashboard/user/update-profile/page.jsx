@@ -30,7 +30,7 @@ export default function UpdateProfilePage() {
       }
 
       // 2. Synchronize the data change with your Express backend API
-      const res = await fetch('http://localhost:5000/users', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/users`, {
         method: 'POST', // Changed to POST to match your backend upsert endpoint
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

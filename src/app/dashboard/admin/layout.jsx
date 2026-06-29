@@ -74,7 +74,7 @@ export default function AdminDashboardLayout({ children }) {
 
       {/* CORE CONTENT ROUTER PAGE MOUNT */}
       <main className="flex-1  overflow-y-auto">
-        <div className="max-w-5xl  mx-auto">{children}</div>
+        <div className="w-full mx-auto">{children}</div>
       </main>
     </div>
   );

@@ -15,7 +15,7 @@ export default function LawyerHiringHistoryPage() {
   useEffect(() => {
     if (authLoading || !lawyer?.id) return;
 
-    fetch(`http://localhost:5000/hires/lawyer/${lawyer.id}`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${lawyer.id}`)
       .then(res => res.json())
       .then(res => {
         if (res.success) setRequests(res.data);
@@ -33,7 +33,7 @@ export default function LawyerHiringHistoryPage() {
     if (!confirm(`Are you sure you want to ${confirmationText} this hiring request?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/hires/lawyer/action/${requestId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/action/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: decision }) 

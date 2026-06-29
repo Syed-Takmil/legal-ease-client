@@ -34,7 +34,7 @@ export default function LawyerDetailPage() {
         setLoading(true);
         
         // Fetch Lawyer Details
-        const lawyerRes = await fetch(`http://localhost:5000/lawyers/${id}`);
+        const lawyerRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${id}`);
         if (!lawyerRes.ok) throw new Error(`Profile target unavailable (Status: ${lawyerRes.status})`);
         const lawyerResult = await lawyerRes.json();
         
@@ -46,7 +46,7 @@ export default function LawyerDetailPage() {
         }
 
         // Fetch Lawyer's Comments
-        const commentsRes = await fetch(`http://localhost:5000/comments?lawyerId=${id}`);
+        const commentsRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/comments?lawyerId=${id}`);
         if (commentsRes.ok) {
           const commentsResult = await commentsRes.json();
           if (commentsResult.success) {
@@ -88,7 +88,7 @@ export default function LawyerDetailPage() {
         status: 'pending' 
       };
 
-      const response = await fetch('http://localhost:5000/hires/create', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/hires/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

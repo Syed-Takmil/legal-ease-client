@@ -7,7 +7,7 @@ export default function AdminTransactionsLedgerPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/admin/transactions')
+    fetch(`${process.env.NEXT_PUBLIC_URL}admin/transactions`)
       .then(res => res.json())
       .then(res => {
         if (res.success && Array.isArray(res.data)) {

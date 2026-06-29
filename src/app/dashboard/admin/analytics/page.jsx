@@ -12,7 +12,7 @@ export default function AdminAnalyticsDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/admin/analytics-summary')
+    fetch(`${process.env.NEXT_PUBLIC_URL}/admin/analytics-summary`)
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {

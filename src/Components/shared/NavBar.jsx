@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'; 
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'; // ✅ Added for query navigation
 import { 
   Magnifier, 
   ArrowRightFromSquare, 
@@ -15,19 +15,19 @@ import {
   Dice4
 } from '@gravity-ui/icons';
 import NavLink from './NavLink';
+import { authClient } from '@/app/lib/auth-client';
 import Image from 'next/image';
 import Logo from './Logo';
-import { authClient } from '@/app/lib/auth-client';
 
-export default  function Navbar() {
+export default function Navbar() {
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
+  const userRole = user?.role;
 
-    const { data: session,isPending}=authClient.useSession()
-    const user=session?.user
+  const path = usePathname();
+  const router = useRouter();             // ✅ Initialize Router
+  const searchParams = useSearchParams(); // ✅ Read current URL params
 
- 
- const path = usePathname();
-  const router = useRouter();             
-  const searchParams = useSearchParams(); //  Read current URL params
   const [searchQuery, setSearchQuery] = useState('');
 
   // ✅ Keep search input synced if user changes pages or reloads
@@ -40,7 +40,10 @@ export default  function Navbar() {
     }
   }, [searchParams, path]);
 
-
+  const DashBoardLink = 
+    userRole === "user" ? "/dashboard/user" : 
+    userRole === "admin" ? "/dashboard/admin" : 
+    "/dashboard/lawyer";
 
   // ✅ Global Search Handler: redirects to browse page with your query parameter
   const handleSearch = (e) => {
@@ -56,7 +59,7 @@ export default  function Navbar() {
     <>
       <NavLink href={'/'}>Home</NavLink>
       <NavLink href={'/browse'}>Browse Lawyers</NavLink>
-      <NavLink href={'/dashboard'}>DashBoard</NavLink>
+      <NavLink href={DashBoardLink}>DashBoard</NavLink>
     </>
   );
 
@@ -75,7 +78,7 @@ export default  function Navbar() {
         <PlanetEarth/> Browse Lawyers
       </Link>
       <Link 
-        href={'/dashboard'}
+        href={DashBoardLink}
         className={`flex rounded-xl gap-2 p-2 justify-items-center items-center ${path.startsWith('/dashboard') ? 'text-orange-600 dark:text-orange-500 bg-base-300 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-500 hover:bg-base-300'}`}
       >
         <Dice4/> DashBoard
@@ -83,7 +86,10 @@ export default  function Navbar() {
     </>
   );
 
- 
+  const handleLogout = async () => {
+   await authClient.signOut();
+    window.location.href = "/login";
+  };
 
   return (
     <div className="drawer mx-auto w-full transition-colors duration-200">
@@ -129,11 +135,13 @@ export default  function Navbar() {
                 <Image 
                   width={48} 
                   height={48} 
-                  src={user?.image} 
+                  src={user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} 
                   alt='profile pic'
                   className='rounded-full w-12 h-12 object-cover border border-neutral-200 dark:border-neutral-800 p-1'
                 />
-                <button  className='btn rounded-xl bg-orange-600 hover:bg-orange-700 text-white border-none'>
+                <button onClick={async()=>{
+                  await authClient.signOut();
+                }} className='btn rounded-xl bg-orange-600 hover:bg-orange-700 text-white border-none'>
                   Sign Out <ArrowRightFromSquare/>
                 </button>
               </div>
@@ -151,7 +159,7 @@ export default  function Navbar() {
       {/* Mobile Responsive Drawer Side Panel */}
       <div className="drawer-side z-[9999]">
         <label htmlFor="navbar-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
-        <div className="menu p-4 w-80 min-h-full bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 border-r border-neutral-200 dark:border-neutral-900 space-y-4 shadow-xl transition-colors duration-200">
+        <div className="menu p-4 w-60 md:w-80 min-h-full bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 border-r border-neutral-200 dark:border-neutral-900 space-y-4 shadow-xl transition-colors duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-neutral-900">
             <Logo />
           </div>

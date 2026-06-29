@@ -16,7 +16,7 @@ export default function LawyerManageProfilePage() {
   useEffect(() => {
     if (authLoading || !user?.id) return;
 
-    fetch(`http://localhost:5000/lawyers/${user.id}`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`)
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
@@ -48,7 +48,7 @@ export default function LawyerManageProfilePage() {
     };
 
     try {
-      const res = await fetch(`http://localhost:5000/lawyers/${user.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedPayload)

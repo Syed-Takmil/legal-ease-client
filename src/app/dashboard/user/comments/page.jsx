@@ -18,7 +18,7 @@ export default function CommentsPage() {
   useEffect(() => {
     if (authLoading || !user?.id) return;
 
-    fetch(`http://localhost:5000/comments?userId=${user.id}`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/comments?userId=${user.id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Could not parse dashboard data profile logs.");
         return res.json();
@@ -47,7 +47,7 @@ export default function CommentsPage() {
     if (!editText.trim() || !user?.id) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/comments/update/${activeModalComment._id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/comments/update/${activeModalComment._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

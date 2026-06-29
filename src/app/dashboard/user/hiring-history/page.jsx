@@ -15,7 +15,7 @@ export default function HiringHistoryPage() {
     // Wait until auth state is confirmed and user data is present
     if (authLoading || !user?.id) return;
 
-    fetch(`http://localhost:5000/hires/user/${user.id}`)
+    fetch(`${process.env.NEXT_PUBLIC_URL}/hires/user/${user.id}`)
       .then(res => res.json())
       .then(res => {
         if (res.success) {

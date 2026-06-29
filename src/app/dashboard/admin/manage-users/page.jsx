@@ -11,7 +11,7 @@ export default function AdminManageUsersPage() {
 
   // Fetch users array from the Express server node
   useEffect(() => {
-    fetch('http://localhost:5000/users')
+    fetch(`${process.env.NEXT_PUBLIC_URL}/users`)
       .then(res => res.json())
       .then(res => {
         if (res.success && Array.isArray(res.data)) {
@@ -32,7 +32,7 @@ export default function AdminManageUsersPage() {
     if (!confirm(`Elevate/Change target identity matrix node to: [${nextRole.toUpperCase()}]?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${userId}/role`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/users/${userId}/role`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: nextRole })
@@ -53,7 +53,7 @@ export default function AdminManageUsersPage() {
     if (!confirm('DANGER: Irreversibly delete this user account from cluster index files?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/users/${userId}`, { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/users/${userId}`, { 
         method: 'DELETE' 
       });
       const data = await res.json();
