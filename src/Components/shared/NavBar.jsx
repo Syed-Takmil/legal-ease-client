@@ -1,13 +1,11 @@
 
 
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'; // ✅ Added for query navigation
+import { usePathname } from 'next/navigation'; 
 import { 
-  Magnifier, 
   ArrowRightFromSquare, 
   Bars, 
   House,
@@ -18,42 +16,18 @@ import NavLink from './NavLink';
 import { authClient } from '@/app/lib/auth-client';
 import Image from 'next/image';
 import Logo from './Logo';
+import NavbarSearch from '../NavbarSearch';
 
 export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
   const userRole = user?.role;
-
   const path = usePathname();
-  const router = useRouter();             // ✅ Initialize Router
-  const searchParams = useSearchParams(); // ✅ Read current URL params
-
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // ✅ Keep search input synced if user changes pages or reloads
-  useEffect(() => {
-    const currentSearch = searchParams.get('search');
-    if (currentSearch) {
-      setSearchQuery(currentSearch);
-    } else if (path !== '/browse') {
-      setSearchQuery(''); // Clear search if navigating away from browse
-    }
-  }, [searchParams, path]);
 
   const DashBoardLink = 
     userRole === "user" ? "/dashboard/user" : 
     userRole === "admin" ? "/dashboard/admin" : 
     "/dashboard/lawyer";
-
-  // ✅ Global Search Handler: redirects to browse page with your query parameter
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/browse?search=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      router.push('/browse'); // If search is cleared, show all
-    }
-  };
 
   const links = (
     <>
@@ -87,8 +61,12 @@ export default function Navbar() {
   );
 
   const handleLogout = async () => {
-   await authClient.signOut();
-    window.location.href = "/login";
+    try {
+      await authClient.signOut();
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return (
@@ -108,20 +86,9 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Search Bar (Always visible) */}
+          {/* Desktop Search Bar (Wrapped in Suspense internally inside NavbarSearch) */}
           <div className="navbar-center hidden md:flex lg:w-1/4 w-fit max-w-md">
-            <form onSubmit={handleSearch} className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search lawyers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input input-bordered w-full pl-10 bg-neutral-100 dark:bg-base-200 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-800 text-sm focus:input-primary h-10 rounded-lg placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors"
-              />
-              <div className="absolute left-3 top-2.5 text-neutral-400 dark:text-neutral-500">
-                <Magnifier/>
-              </div>
-            </form>
+            <NavbarSearch/>
           </div>
 
           <div className="navbar-end lg:w-2/4 gap-4">
@@ -130,18 +97,16 @@ export default function Navbar() {
             </div>
             <div className='hidden lg:block h-6 border-l border-neutral-200 dark:border-neutral-800'></div>
             {
-              user ?
+              user && user.image ?
               <div className='flex items-center gap-2'>
                 <Image 
                   width={48} 
                   height={48} 
-                  src={user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} 
+                  src={user.image} 
                   alt='profile pic'
                   className='rounded-full w-12 h-12 object-cover border border-neutral-200 dark:border-neutral-800 p-1'
                 />
-                <button onClick={async()=>{
-                  await authClient.signOut();
-                }} className='btn rounded-xl bg-orange-600 hover:bg-orange-700 text-white border-none'>
+                <button onClick={handleLogout} className='btn rounded-xl bg-orange-600 hover:bg-orange-700 text-white border-none'>
                   Sign Out <ArrowRightFromSquare/>
                 </button>
               </div>
@@ -163,19 +128,12 @@ export default function Navbar() {
           <div className="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-neutral-900">
             <Logo />
           </div>
-          {/* Mobile Search Input */}
-          <form onSubmit={handleSearch} className="relative w-full md:hidden">
-            <input
-              type="text"
-              placeholder="Search lawyers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input input-bordered w-full pl-10 bg-neutral-100 dark:bg-base-300 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-800 text-sm focus:input-primary h-10 rounded-lg placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-            />
-            <div className="absolute left-3 top-2.5 text-neutral-400 dark:text-neutral-500">
-              <Magnifier/>
-            </div>
-          </form>
+          
+          {/* Mobile Search Input (Reused the responsive component) */}
+          <div className="md:hidden w-full">
+            <NavbarSearch />
+          </div>
+
           <ul className="space-y-1 text-lg grid">
             {sideLinks}
           </ul>

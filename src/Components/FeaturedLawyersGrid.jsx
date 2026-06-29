@@ -48,16 +48,16 @@ export default function FeaturedLawyersGrid({ lawyers }) {
           key={lawyer._id}
           variants={cardVariants}
           whileHover={{ y: -6, scale: 1.01 }}
-          className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl overflow-hidden hover:border-orange-500/20 transition-colors duration-300 flex flex-col group shadow-lg shadow-black/40"
+          className="dark:bg-[#0d0d0d] bg-white border border-neutral-800 rounded-2xl overflow-hidden hover:border-orange-500/20 transition-colors duration-300 flex flex-col group shadow-lg shadow-black/40"
         >
           {/* Avatar frame */}
-          <div className="h-35 grid justify-center bg-neutral-950 relative overflow-hidden">
+          <div className="h-35 grid justify-center  relative overflow-hidden">
             <Image
-            width={50}
-            height={50}
+            width={30}
+            height={30}
               src={lawyer.photoUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400'} 
               alt={lawyer.name}
-              className="w-20 h-fit object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+              className="w-20  object-cover group-hover:grayscale-0 transition-all duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] to-transparent" />
             <span className="absolute bottom-3 right-3 text-xs font-mono font-black text-orange-400 bg-neutral-950/80 px-2.5 py-1 border border-neutral-800 rounded-lg">

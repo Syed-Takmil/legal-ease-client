@@ -9,18 +9,15 @@ import TopExperts from "@/Components/TopExperts";
 
 // Server-side database fetching
 async function getHomepageData() {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_URL ;
   try {
-    // Fetch latest 6 lawyers for the Dynamic section
-    const featuredRes = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });
-    const featuredData = await featuredRes.json();
-    // Fetch top 3 lawyers with most hires (changed from local port 5000)
-    const topRes = await fetch(`${baseUrl}/lawyers`, { next: { revalidate: 300 } });
-    const topData = await topRes.json();
-
+    // Fetch once since both sections are consuming the /lawyers collection
+    const res = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });
+    const dataArray= await res.json();
+    
     return {
-      featured: featuredData.success ? featuredData.data : [],
-      topExperts: topData.success ? topData.data : []
+      featured: dataArray, 
+      topExperts: dataArray // Passed down cleanly to be sliced safely inside the component
     };
   } catch (err) {
     console.error("Failed to parse upstream cluster data vectors:", err);
