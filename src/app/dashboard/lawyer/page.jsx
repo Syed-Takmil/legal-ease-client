@@ -4,28 +4,25 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { authClient } from '@/app/lib/auth-client';
 import { CreditCard, ShieldCheck, Briefcase, Star, Eye } from '@gravity-ui/icons';
-import CheckRole from '@/app/lib/actions/CheckRole';
-import { redirect } from 'next/navigation';
 
 export default function LawyerDashboardHome() {
-  
+  // Get authentication state
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
-  if(!CheckRole(user?.role)){
-redirect("/unauthorized")
-  }
 
-  const [profile, setProfile] = useState(null);
+  // State Management
+  const [profile, setProfile] = useState(null); // Added this to store lawyer DB info
   const [hires, setHires] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If auth is loading or we don't have a user ID, don't fetch data yet
     if (authLoading || !user?.id) return;
 
-    // Fetch profile and case allocation logs simultaneously
+    // Fetch profile and case allocation logs simultaneously using user.id
     Promise.all([
-      fetch(`http://localhost:5000/lawyers/${user.id}`).then(res => res.json()),
-      fetch(`http://localhost:5000/hires/lawyer/${user.id}`).then(res => res.json())
+      fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`).then(res => res.json()),
+      fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${user.id}`).then(res => res.json())
     ])
       .then(([profileRes, hiresRes]) => {
         if (profileRes.success) setProfile(profileRes.data);
@@ -35,6 +32,7 @@ redirect("/unauthorized")
       .finally(() => setLoading(false));
   }, [user?.id, authLoading]);
 
+  // SCREEN 1: Loading State
   if (authLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2 text-zinc-500">
@@ -44,8 +42,8 @@ redirect("/unauthorized")
     );
   }
 
-  // GATE 1: Lawyer hasn't paid the publishing premium license fee yet
-  if (!profile || !profile.isPaid) {
+  // GATE 1: Check database profile directly to see if they paid
+  if (!profile?.isPaid) {
     return (
       <div className="max-w-xl mx-auto py-8 space-y-6">
         <div className="text-center space-y-2">
@@ -66,7 +64,7 @@ redirect("/unauthorized")
             <div className="text-3xl font-black text-purple-400 pt-3">$149<span className="text-xs text-zinc-500 font-normal"> / fixed license</span></div>
           </div>
 
-          {/* Native HTML Form seamlessly takes over to route directly through server responses */}
+          {/* Native HTML Form to route through payment processing */}
           <form action="/api/checkout_sessions" method="POST">
             <button
               type="submit"
@@ -76,14 +74,13 @@ redirect("/unauthorized")
               Secure Placement License
             </button>
           </form>
-         
         </div>
       </div>
     );
   }
 
-  // GATE 2: Lawyer paid but hasn't submitted their profile configuration payload parameters
-  if (profile.isPaid && !profile.specialization) {
+  // GATE 2: They paid, but checking if profile configuration is empty
+  if (!profile?.specialization) {
     return (
       <div className="max-w-md mx-auto py-12 text-center space-y-5">
         <div className="w-12 h-12 bg-orange-500/10 text-orange-400 rounded-full flex items-center justify-center mx-auto">
@@ -103,7 +100,7 @@ redirect("/unauthorized")
     );
   }
 
-  // FULL WORKSPACE: Active, Verified Lawyer View
+  // FULL WORKSPACE: Active, Verified Lawyer View (Passed both Gates)
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -112,9 +109,9 @@ redirect("/unauthorized")
           <p className="text-xs text-zinc-500 mt-0.5">Track case load request configurations and listing exposure metrics.</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 rounded-full ${profile.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+          <span className={`h-2 w-2 rounded-full ${profile?.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
           <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-            Listing State: {profile.isPublished ? 'Live on Registry' : 'Offline / Hidden'}
+            Listing State: {profile?.isPublished ? 'Live on Registry' : 'Offline / Hidden'}
           </span>
         </div>
       </div>
@@ -140,7 +137,10 @@ redirect("/unauthorized")
             <span className="text-xs font-medium">Assigned Fee Rate</span>
             <Star className="w-4 h-4" />
           </div>
-          <p className="text-2xl font-black text-purple-400">${profile.hourlyRate || profile.fee || 0}<span className="text-xs text-zinc-600 font-normal"> / hr</span></p>
+          <p className="text-2xl font-black text-purple-400">
+            ${profile?.hourlyRate || profile?.fee || 0}
+            <span className="text-xs text-zinc-600 font-normal"> / hr</span>
+          </p>
         </div>
       </div>
 

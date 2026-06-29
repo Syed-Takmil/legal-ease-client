@@ -13,6 +13,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Hiring History', href: '/dashboard/user/hiring-history', icon: Briefcase },
     { name: 'Update Profile', href: '/dashboard/user/update-profile', icon: Person },
     { name: 'My Comments', href: '/dashboard/user/comments', icon: Comment },
+    
   ];
 
   return (

@@ -8,7 +8,7 @@ export default function AdminDashboard() {
  const {data:session,isPending}=authClient.useSession();
       const user = session?.user;
   return (
-    <div className="space-y-6 bg-white min-h-screen dark:bg-black">
+    <div className="space-y-6  bg-white min-h-screen dark:bg-black">
       {/* WELCOME BANNER HEADLINE */}
     <div className='flex items-center text-black  dark:text-orange-400  text-3xl r gap-5'>
         <span className='p-2.5 rounded-xl bg-orange-500/10  dark:text-orange-400 border border-orange-500/10'>  <Hand></Hand></span>

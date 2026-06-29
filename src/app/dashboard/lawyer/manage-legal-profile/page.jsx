@@ -43,7 +43,7 @@ export default function LawyerManageProfilePage() {
       hourlyRate: Number(formFields.hourlyRate), // Clean numeric alignment
       bio: formFields.bio,
       photoUrl: formFields.photoUrl,
-      isPaid: profile?.isPaid ?? true, 
+      isPaid: true, 
       isPublished: profile?.isPublished ?? false
     };
 

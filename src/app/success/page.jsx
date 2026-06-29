@@ -1,11 +1,15 @@
 
 
+
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { stripe } from '../lib/stripe';
+import GetUser from '../lib/actions/GetUser';
+import { authClient } from '../lib/auth-client';
 
 export default async function Success({ searchParams }) {
   const { session_id } = await searchParams;
+
 
   if (!session_id) {
     throw new Error('Please provide a valid session_id (`cs_test_...`)');
@@ -25,6 +29,7 @@ export default async function Success({ searchParams }) {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 relative overflow-hidden bg-white dark:bg-[#060606]">
       {/* Ambient background design accents */}
+      <input name='' type='hidden'/>
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-purple-600/10 dark:bg-purple-600/5 blur-[100px] rounded-full pointer-events-none" />
       
       <div className="max-w-md w-full text-center space-y-8 bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800/80 rounded-2xl p-8 shadow-xl relative z-10">

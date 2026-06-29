@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { PencilToLine } from '@gravity-ui/icons';
 import Image from 'next/image';
 import { authClient } from '@/app/lib/auth-client';
+import { useRouter } from 'next/navigation'; // Changed from redirect
+import { toast } from 'react-toastify';
 
 export default function LawyerManageProfilePage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
+  const router = useRouter(); // Initialize router hook
 
-  // Track initial or fetched profile state to handle loading and image previews
   const [profile, setProfile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -33,7 +35,6 @@ export default function LawyerManageProfilePage() {
     if (!user?.id) return;
     setSaving(true);
 
-    // 🛠️ Grab input values via Object.fromEntries
     const formData = new FormData(e.currentTarget);
     const formFields = Object.fromEntries(formData);
 
@@ -42,22 +43,28 @@ export default function LawyerManageProfilePage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...profile,          // Retain underlying properties like userId, status flags
-          ...formFields,        // Spread text fields directly from DOM inputs
-          hourlyRate: Number(formFields.fee), // Ensure numbers are typed correctly
-          isPaid: profile?.isPaid ?? true, // Protect payment data state
+          ...profile,          
+          ...formFields,        
+          userId: user.id, // 🔥 CRITICAL FIX: Explicitly pass user.id as the userId foreign key
+          hourlyRate: Number(formFields.fee), 
+          isPaid: true,        
           isPublished: profile?.isPublished ?? false
         })
       });
 
       const data = await res.json();
       if (data.success) {
-        alert("Profile properties verified and completely updated via Object.fromEntries parsing.");
-        // Sync local preview state with new values
+        toast.success("Profile properties verified and updated.");
         setProfile(prev => ({ ...prev, ...formFields, fee: Number(formFields.fee) }));
+        
+        // Clean routing transition redirect
+        router.push('/dashboard/lawyer');
+      } else {
+        toast.error(data.message || "Failed to update backend profile parameters.");
       }
     } catch (err) {
       console.error(err);
+      toast.error("An error occurred during submission.");
     } finally {
       setSaving(false);
     }
@@ -80,7 +87,7 @@ export default function LawyerManageProfilePage() {
             <label className="text-xs font-medium text-zinc-400">Professional Name</label>
             <input 
               type="text" 
-              name="name" // Required for Object.fromEntries mapping
+              name="name" 
               required
               defaultValue={profile?.name || ''} 
               className="w-full h-11 px-4 bg-white dark:bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-black dark:text-white focus:outline-none focus:border-purple-500/50 transition-colors"
@@ -130,7 +137,7 @@ export default function LawyerManageProfilePage() {
               name="photoUrl"
               placeholder="https://example.com/your-photo.jpg"
               defaultValue={profile?.photoUrl || ''} 
-              onChange={e => setProfile(prev => ({ ...prev, photoUrl: e.target.value }))} // Retained to dynamically update live picture mirror
+              onChange={e => setProfile(prev => ({ ...prev, photoUrl: e.target.value }))} 
               className="flex-1 h-11 px-4 bg-white dark:bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-black dark:text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             />
             {profile?.photoUrl && (

@@ -64,7 +64,6 @@ export default function LawyerDetailPage() {
     fetchLawyerDetailsAndComments();
   }, [id]);
 
-  // CORE CONSULTATION PLACEMENT LOGIC
   const handleConsultationRequest = async () => {
     if (authLoading) return;
 
@@ -77,18 +76,17 @@ export default function LawyerDetailPage() {
     try {
       setHiring(true);
        
-    const payload = {
-  // 🛠️ FIX: Change lawyer._id to the authentication identity string (lawyer.userId or lawyer.id)
-  lawyerId: lawyer.userId || lawyer.id || lawyer._id,
-  lawyerName: lawyer.name,
-  specialization: lawyer.specialization,
-  fee: lawyer.hourlyRate, 
-  userId: user.id,          
-  userName: user.name,      
-  userEmail: user.email,    
-  requestDate: new Date().toISOString(),
-  status: 'pending' 
-};
+      const payload = {
+        lawyerId: lawyer.userId || lawyer.id || lawyer._id,
+        lawyerName: lawyer.name,
+        specialization: lawyer.specialization,
+        fee: lawyer.hourlyRate, 
+        userId: user.id,          
+        userName: user.name,      
+        userEmail: user.email,    
+        requestDate: new Date().toISOString(),
+        status: 'pending' 
+      };
 
       const response = await fetch('http://localhost:5000/hires/create', {
         method: 'POST',
@@ -112,7 +110,6 @@ export default function LawyerDetailPage() {
     }
   };
 
-  // POST A NEW COMMENT LOGIC
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -136,7 +133,7 @@ export default function LawyerDetailPage() {
         createdAt: new Date().toISOString()
       };
 
-      const response = await fetch('http://localhost:5000/comments/create', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/comments/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -160,21 +157,12 @@ export default function LawyerDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-neutral-500 dark:text-zinc-400 flex flex-col items-center justify-center gap-3 transition-colors">
-        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs tracking-wider uppercase font-medium text-neutral-400 dark:text-zinc-500">Loading Advocate Docket...</p>
-      </div>
-    );
-  }
-
-  if (error || !lawyer) {
+  if (error) {
     return (
       <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-neutral-800 dark:text-zinc-200 flex flex-col items-center justify-center p-6 text-center transition-colors">
         <div className="max-w-md bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 p-8 rounded-2xl space-y-4 shadow-sm">
           <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Profile Disruption</h2>
-          <p className="text-sm text-neutral-500 dark:text-zinc-400">{error || "The selected profile node could not be matched."}</p>
+          <p className="text-sm text-neutral-500 dark:text-zinc-400">{error}</p>
           <button 
             onClick={() => router.push('/browse')}
             className="px-5 py-2 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-xs text-orange-600 dark:text-orange-400 font-semibold rounded-lg transition-colors inline-flex items-center gap-2"
@@ -198,166 +186,219 @@ export default function LawyerDetailPage() {
           Back to Directory
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          
-          {/* LEFT SIDE: BIOMETRIC CARD */}
-          <div className="lg:col-span-1 bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 space-y-5 text-center relative overflow-hidden shadow-sm dark:shadow-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+        {loading ? (
+          /* ==================================================================== */
+          /* PREMIUM LAYOUT SKELETON PLACEHOLDERS                                  */
+          /* ==================================================================== */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start animate-pulse">
             
-            <div className="w-32 h-32 rounded-2xl overflow-hidden mx-auto bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 relative">
-              <Image
-                width={100}
-                height={70}
-                src={lawyer.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"} 
-                alt={lawyer.name} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <h1 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center justify-center gap-1.5">
-                {lawyer.name}
-                {lawyer.status !== 'Busy' && <CircleCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
-              </h1>
-              <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-500">{lawyer.specialization}</p>
-            </div>
-
-            <div className="pt-4 border-t border-neutral-200 dark:border-neutral-900/60 flex items-center justify-around text-xs text-neutral-500 dark:text-zinc-400">
-              <div className="text-center">
-                <span className="block text-neutral-900 dark:text-white font-bold text-sm">{lawyer.experience || "5+"} Yrs</span>
-                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase">Practice</span>
+            {/* LEFT SIDE: BIOMETRIC CARD SKELETON */}
+            <div className="lg:col-span-1 bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 space-y-5 flex flex-col items-center">
+              <div className="w-32 h-32 rounded-2xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800" />
+              <div className="space-y-2 w-full flex flex-col items-center">
+                <div className="h-5 bg-neutral-300 dark:bg-neutral-800 rounded w-2/3" />
+                <div className="h-3.5 bg-neutral-200 dark:bg-neutral-800/60 rounded w-1/2" />
               </div>
-              <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-900" />
-              <div className="text-center">
-                <span className="block text-neutral-900 dark:text-white font-bold text-sm flex items-center gap-0.5 justify-center">
-                  <Star className="w-3 h-3 text-amber-500 dark:text-amber-400 fill-amber-500 dark:fill-amber-400" /> {lawyer.rating || "4.9"}
-                </span>
-                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase">Rating</span>
+              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-900/60 flex items-center justify-around w-full">
+                <div className="w-12 h-8 bg-neutral-200 dark:bg-neutral-800/60 rounded" />
+                <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-900" />
+                <div className="w-12 h-8 bg-neutral-200 dark:bg-neutral-800/60 rounded" />
+              </div>
+            </div>
+
+            {/* RIGHT SIDE: PANELS SKELETONS */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Professional Statement Skeleton */}
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-4">
+                <div className="h-4 bg-neutral-300 dark:bg-neutral-800 rounded w-1/4 mb-2" />
+                <div className="space-y-2.5">
+                  <div className="h-3.5 bg-neutral-200 dark:bg-neutral-800/60 rounded w-full" />
+                  <div className="h-3.5 bg-neutral-200 dark:bg-neutral-800/60 rounded w-11/12" />
+                  <div className="h-3.5 bg-neutral-200 dark:bg-neutral-800/60 rounded w-4/5" />
+                </div>
+              </div>
+
+              {/* Retainer Pricing Bar Skeleton */}
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div className="space-y-2 w-1/2">
+                  <div className="h-3 bg-neutral-200 dark:bg-neutral-800/60 rounded w-1/3" />
+                  <div className="h-8 bg-neutral-300 dark:bg-neutral-800 rounded w-1/2" />
+                </div>
+                <div className="h-12 bg-neutral-300 dark:bg-neutral-800 rounded-xl w-full sm:w-40" />
+              </div>
+
+              {/* Comment & Review System Skeleton */}
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-4">
+                <div className="h-4 bg-neutral-300 dark:bg-neutral-800 rounded w-1/5" />
+                <div className="h-24 bg-neutral-200 dark:bg-neutral-800/50 rounded-xl w-full" />
+                <div className="h-10 bg-neutral-300 dark:bg-neutral-800 rounded-lg w-28" />
               </div>
             </div>
           </div>
-
-          {/* RIGHT SIDE: DETAILS, RETAINER, AND COMMENTS PANEL */}
-          <div className="lg:col-span-2 space-y-6">
+        ) : (
+          /* ==================================================================== */
+          /* RENDER COMPONENT INSTANCE AFTER FULL PIPELINE SETTLEMENT            */
+          /* ==================================================================== */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm dark:shadow-none">
-              <h2 className="text-lg font-bold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-900 pb-3">Professional Statement</h2>
-              <p className="text-sm text-neutral-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
-                {lawyer.bio || "No professional biography has been cataloged for this attorney profile node."}
-              </p>
-            </div>
-
-            <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-sm dark:shadow-none">
-              <div className="space-y-1">
-                <span className="text-xs text-neutral-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Standard Consultation Retainer</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-neutral-900 dark:text-white">${lawyer.hourlyRate}</span>
-                  <span className="text-sm text-neutral-500 dark:text-zinc-400">/ billing hour</span>
-                </div>
+            {/* LEFT SIDE: BIOMETRIC CARD */}
+            <div className="lg:col-span-1 bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 space-y-5 text-center relative overflow-hidden shadow-sm dark:shadow-none">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="w-32 h-32 rounded-2xl overflow-hidden mx-auto bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 relative">
+                <Image
+                  width={100}
+                  height={70}
+                  src={lawyer.photoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"} 
+                  alt={lawyer.name} 
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
               </div>
 
-              <button 
-                onClick={handleConsultationRequest}
-                disabled={lawyer.status === 'Busy' || hiring}
-                className={`w-full sm:w-auto px-6 h-12 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 shadow-sm ${
-                  lawyer.status === 'Busy'
-                    ? 'bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-neutral-400 dark:text-zinc-600 cursor-not-allowed'
-                    : 'bg-orange-500 hover:bg-orange-600 text-white font-medium hover:shadow-lg hover:shadow-orange-500/10'
-                }`}
-              >
-                {lawyer.status === 'Busy' ? 'Currently Retained / Busy' : hiring ? 'Processing Request...' : 'Request Consultation'}
-              </button>
+              <div className="space-y-1">
+                <h1 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center justify-center gap-1.5">
+                  {lawyer.name}
+                  {lawyer.status !== 'Busy' && <CircleCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
+                </h1>
+                <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-500">{lawyer.specialization}</p>
+              </div>
+
+              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-900/60 flex items-center justify-around text-xs text-neutral-500 dark:text-zinc-400">
+                <div className="text-center">
+                  <span className="block text-neutral-900 dark:text-white font-bold text-sm">{lawyer.experience || "5+"} Yrs</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase">Practice</span>
+                </div>
+                <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-900" />
+                <div className="text-center">
+                  <span className="block text-neutral-900 dark:text-white font-bold text-sm flex items-center gap-0.5 justify-center">
+                    <Star className="w-3 h-3 text-amber-500 dark:text-amber-400 fill-amber-500 dark:fill-amber-400" /> {lawyer.rating || "4.9"}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase">Rating</span>
+                </div>
+              </div>
             </div>
 
-            {/* --- REVIEWS & COMMENTS SPACE --- */}
-            <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-none">
-              <h2 className="text-lg font-bold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-900 pb-3 flex items-center gap-2">
-                <Comment className="w-4 h-4 text-orange-500" /> Client Reviews ({comments.length})
-              </h2>
+            {/* RIGHT SIDE: DETAILS, RETAINER, AND COMMENTS PANEL */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm dark:shadow-none">
+                <h2 className="text-lg font-bold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-900 pb-3">Professional Statement</h2>
+                <p className="text-sm text-neutral-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
+                  {lawyer.bio || "No professional biography has been cataloged for this attorney profile node."}
+                </p>
+              </div>
 
-              {/* Conditional Form Wrapper based on authentication state */}
-              {user ? (
-                <form onSubmit={handleCommentSubmit} className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <label className="text-xs text-neutral-500 dark:text-zinc-400 uppercase font-bold">Your Rating:</label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          type="button"
-                          key={star}
-                          onClick={() => setCommentRating(star)}
-                          className="text-amber-500 focus:outline-none"
-                        >
-                          <Star className={`w-5 h-5 ${star <= commentRating ? 'fill-amber-500' : 'text-zinc-600'}`} />
-                        </button>
-                      ))}
-                    </div>
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-sm dark:shadow-none">
+                <div className="space-y-1">
+                  <span className="text-xs text-neutral-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Standard Consultation Retainer</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-neutral-900 dark:text-white">${lawyer.hourlyRate}</span>
+                    <span className="text-sm text-neutral-500 dark:text-zinc-400">/ billing hour</span>
                   </div>
-
-                  <div className="relative">
-                    <textarea
-                      rows={3}
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Write your client experience review here..."
-                      disabled={submittingComment}
-                      className="w-full p-4 rounded-xl text-sm bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-zinc-600 focus:outline-none focus:border-orange-500 transition-colors resize-none"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submittingComment}
-                    className="px-5 h-10 rounded-lg text-xs bg-neutral-900 dark:bg-neutral-100 text-white dark:text-black font-bold tracking-wide hover:bg-orange-500 dark:hover:bg-orange-500 dark:hover:text-white transition-all shadow-sm"
-                  >
-                    {submittingComment ? "Posting Review..." : "Submit Review"}
-                  </button>
-                </form>
-              ) : (
-                <div className="p-6 rounded-xl bg-neutral-100/50 dark:bg-neutral-900/30 border border-dashed border-neutral-300 dark:border-neutral-800 text-center space-y-3">
-                  <p className="text-sm text-neutral-500 dark:text-zinc-400">
-                    Only verified clients can submit consultation feedback and community ratings.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/login?redirect=/browse/${id}`)}
-                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
-                  >
-                    Sign In to Leave a Review
-                  </button>
                 </div>
-              )}
 
-              {/* Render existing comments array pipeline */}
-              <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-900">
-                {comments.length === 0 ? (
-                  <p className="text-center text-xs text-neutral-400 dark:text-zinc-600 py-4">No reviews have been added for this counselor yet.</p>
+                <button 
+                  onClick={handleConsultationRequest}
+                  disabled={lawyer.status === 'Busy' || hiring}
+                  className={`w-full sm:w-auto px-6 h-12 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 shadow-sm ${
+                    lawyer.status === 'Busy'
+                      ? 'bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-neutral-400 dark:text-zinc-600 cursor-not-allowed'
+                      : 'bg-orange-500 hover:bg-orange-600 text-white font-medium hover:shadow-lg hover:shadow-orange-500/10'
+                  }`}
+                >
+                  {lawyer.status === 'Busy' ? 'Currently Retained / Busy' : hiring ? 'Processing Request...' : 'Request Consultation'}
+                </button>
+              </div>
+
+              {/* --- REVIEWS & COMMENTS SPACE --- */}
+              <div className="bg-neutral-50 dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-none">
+                <h2 className="text-lg font-bold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-900 pb-3 flex items-center gap-2">
+                  <Comment className="w-4 h-4 text-orange-500" /> Client Reviews ({comments.length})
+                </h2>
+
+                {user ? (
+                  <form onSubmit={handleCommentSubmit} className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <label className="text-xs text-neutral-500 dark:text-zinc-400 uppercase font-bold">Your Rating:</label>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            type="button"
+                            key={star}
+                            onClick={() => setCommentRating(star)}
+                            className="text-amber-500 focus:outline-none"
+                          >
+                            <Star className={`w-5 h-5 ${star <= commentRating ? 'fill-amber-500' : 'text-zinc-600'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <textarea
+                        rows={3}
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Write your client experience review here..."
+                        disabled={submittingComment}
+                        className="w-full p-4 rounded-xl text-sm bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-zinc-600 focus:outline-none focus:border-orange-500 transition-colors resize-none"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingComment}
+                      className="px-5 h-10 rounded-lg text-xs bg-neutral-900 dark:bg-neutral-100 text-white dark:text-black font-bold tracking-wide hover:bg-orange-500 dark:hover:bg-orange-500 dark:hover:text-white transition-all shadow-sm"
+                    >
+                      {submittingComment ? "Posting Review..." : "Submit Review"}
+                    </button>
+                  </form>
                 ) : (
-                  comments.map((comment) => (
-                    <div key={comment._id} className="p-4 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-900/60 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-neutral-900 dark:text-white">{comment.userName}</span>
-                        <div className="flex gap-0.5 text-amber-500">
-                          {Array.from({ length: comment.rating }).map((_, i) => (
-                            <Star key={i} className="w-3 h-3 fill-amber-500" />
-                          ))}
+                  <div className="p-6 rounded-xl bg-neutral-100/50 dark:bg-neutral-900/30 border border-dashed border-neutral-300 dark:border-neutral-800 text-center space-y-3">
+                    <p className="text-sm text-neutral-500 dark:text-zinc-400">
+                      Only verified clients can submit consultation feedback and community ratings.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/login?redirect=/browse/${id}`)}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
+                    >
+                      Sign In to Leave a Review
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-900">
+                  {comments.length === 0 ? (
+                    <p className="text-center text-xs text-neutral-400 dark:text-zinc-600 py-4">No reviews have been added for this counselor yet.</p>
+                  ) : (
+                    comments.map((comment) => (
+                      <div key={comment._id} className="p-4 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-900/60 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-neutral-900 dark:text-white">{comment.userName}</span>
+                          <div className="flex gap-0.5 text-amber-500">
+                            {Array.from({ length: comment.rating }).map((_, i) => (
+                              <Star key={i} className="w-3 h-3 fill-amber-500" />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-sm text-neutral-700 dark:text-zinc-400 leading-relaxed whitespace-pre-line">
+                          {comment.text}
+                        </p>
+                        <div className="text-[10px] text-neutral-400 dark:text-zinc-600 font-mono text-right">
+                          {new Date(comment.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <p className="text-sm text-neutral-700 dark:text-zinc-400 leading-relaxed whitespace-pre-line">
-                        {comment.text}
-                      </p>
-                      <div className="text-[10px] text-neutral-400 dark:text-zinc-600 font-mono text-right">
-                        {new Date(comment.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
 
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

@@ -4,6 +4,7 @@ import Navbar from "@/Components/shared/NavBar";
 import Footer from "@/Components/shared/Footer";
 import { Providers } from "./providers";
 import ThemeToggle from "@/Components/shared/ThemeToggle";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,9 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-screen flex flex-col">
         <Providers>
-        <Navbar/>
+         <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
        <main className="flex-1">
          {children}
          </main>
