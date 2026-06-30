@@ -12,31 +12,46 @@ export default function LawyerDashboardHome() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
+  // FIX: Unconditionally execute the role checking evaluation at the top level 
+  // to adhere strictly to the Rules of Hooks.
+  const hasLawyerRole = CheckRole("lawyer");
+  const isLawyer = !authLoading && hasLawyerRole;
+
   const [profile, setProfile] = useState(null); 
   const [hires, setHires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [licensing, setLicensing] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !CheckRole("lawyer")) {
+    // FIX: Using the evaluated `isLawyer` boolean instead of calling CheckRole conditionally inside the hook
+    if (!authLoading && !isLawyer) {
       router.push("/unauthorized");
     }
-  }, [authLoading, router]);
+  }, [authLoading, isLawyer, router]);
 
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading || !user?.id || !isLawyer) return;
+
+    let isMounted = true;
 
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`).then(res => res.json()),
       fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${user.id}`).then(res => res.json())
     ])
       .then(([profileRes, hiresRes]) => {
+        if (!isMounted) return;
         if (profileRes.success) setProfile(profileRes.data);
-        if (hiresRes.success) setHires(hiresRes.data);
+        if (hiresRes.success) setHires(hiresRes.data || []);
       })
       .catch(err => console.error("Error reading dashboard state parameters:", err))
-      .finally(() => setLoading(false));
-  }, [user?.id, authLoading]);
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, authLoading, isLawyer]);
 
   const handleLicensePayment = async (e) => {
     e.preventDefault();
@@ -60,7 +75,7 @@ export default function LawyerDashboardHome() {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !isLawyer) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2 text-zinc-500">
         <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
@@ -145,14 +160,16 @@ export default function LawyerDashboardHome() {
             <span className="text-xs font-medium">Allocated Files</span>
             <Briefcase className="w-4 h-4" />
           </div>
-          <p className="text-2xl font-black text-white">{hires.length}</p>
+          <p className="text-2xl font-black text-white">{hires?.length || 0}</p>
         </div>
         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-xl p-5 space-y-1">
           <div className="flex items-center justify-between text-zinc-500">
             <span className="text-xs font-medium">Pending Approvals</span>
             <Eye className="w-4 h-4" />
           </div>
-          <p className="text-2xl font-black text-amber-500">{hires.filter(h => h.status === 'pending').length}</p>
+          <p className="text-2xl font-black text-amber-500">
+            {(hires || []).filter(h => h?.status === 'pending').length}
+          </p>
         </div>
         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-xl p-5 space-y-1">
           <div className="flex items-center justify-between text-zinc-500">
@@ -169,7 +186,7 @@ export default function LawyerDashboardHome() {
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Hiring System History Records</h3>
         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-xl overflow-hidden">
-          {hires.length === 0 ? (
+          {!hires || hires.length === 0 ? (
             <p className="p-6 text-xs text-zinc-500 text-center">No hiring consultation files mapped to this lawyer node yet.</p>
           ) : (
             <div className="divide-y divide-neutral-900 overflow-x-auto">

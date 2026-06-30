@@ -4,23 +4,33 @@ import React, { useState, useEffect } from 'react';
 import { PencilToLine } from '@gravity-ui/icons';
 import Image from 'next/image';
 import { authClient } from '@/app/lib/auth-client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // FIX: Use router for secure client-side redirects
 import CheckRole from '@/app/lib/actions/CheckRole';
 
 export default function LawyerManageProfilePage() {
+  const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  if(!CheckRole("lawyer")){
-    redirect("/unauthorized")
-  }
+  // FIX 1: Run the hook unconditionally at the top level to follow Rules of Hooks
+  const hasLawyerRole = CheckRole("lawyer");
+  const isLawyer = !authLoading && hasLawyerRole;
 
   const [profile, setProfile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(true);
 
+  // FIX 2: Handle the authorization check safely within a useEffect once loading finishes
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading) return;
+
+    if (!session || !isLawyer) {
+      router.push("/unauthorized");
+    }
+  }, [session, authLoading, isLawyer, router]);
+
+  useEffect(() => {
+    if (authLoading || !user?.id || !isLawyer) return;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`)
       .then(res => res.json())
@@ -31,7 +41,7 @@ export default function LawyerManageProfilePage() {
       })
       .catch(err => console.error("Database tracking read failure:", err))
       .finally(() => setFetching(false));
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, isLawyer]);
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -41,12 +51,11 @@ export default function LawyerManageProfilePage() {
     const formData = new FormData(e.currentTarget);
     const formFields = Object.fromEntries(formData);
 
-    // Build data structure cleanly mapping to the database model fields
     const updatedPayload = {
       userId: user.id,
       name: formFields.name,
       specialization: formFields.specialization,
-      hourlyRate: Number(formFields.hourlyRate), // Clean numeric alignment
+      hourlyRate: Number(formFields.hourlyRate), 
       bio: formFields.bio,
       photoUrl: formFields.photoUrl,
       isPaid: true, 
@@ -72,7 +81,7 @@ export default function LawyerManageProfilePage() {
     }
   };
 
-  if (authLoading || fetching) {
+  if (authLoading || fetching || !isLawyer) {
     return <div className="text-center py-12 text-xs text-zinc-500 font-mono">Syncing Database Workspace Profile Log...</div>;
   }
 
@@ -113,7 +122,7 @@ export default function LawyerManageProfilePage() {
           <label className="text-xs font-medium text-zinc-400">Hourly Retainer Fee (USD)</label>
           <input 
             type="number" 
-            name="hourlyRate" // ✅ FIX: Change name from 'fee' to 'hourlyRate'
+            name="hourlyRate" 
             required
             defaultValue={profile?.hourlyRate || profile?.fee || ''} 
             className="w-full h-11 px-4 bg-white dark:bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-black dark:text-white focus:outline-none focus:border-purple-500/50 transition-colors"

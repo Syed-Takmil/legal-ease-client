@@ -4,25 +4,34 @@ import React, { useState, useEffect } from 'react';
 import { PencilToLine } from '@gravity-ui/icons';
 import Image from 'next/image';
 import { authClient } from '@/app/lib/auth-client';
-import { redirect, useRouter } from 'next/navigation'; // Changed from redirect
+import { useRouter } from 'next/navigation'; // FIX: Removed raw redirect, utilizing router exclusively
 import { toast } from 'react-toastify';
 import CheckRole from '@/app/lib/actions/CheckRole';
 
 export default function LawyerManageProfilePage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
-  const router = useRouter(); // Initialize router hook
+  const router = useRouter(); 
 
-  if(!CheckRole("lawyer")){
-    redirect("/unauthorized")
-  }
+  // FIX 1: Run the role hook cleanly and unconditionally at the top level
+  const hasLawyerRole = CheckRole("lawyer");
+  const isLawyer = !authLoading && hasLawyerRole;
 
   const [profile, setProfile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(true);
 
+  // FIX 2: Evaluate access parameters inside an isolated useEffect loop once auth loading finishes
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading) return;
+
+    if (!session || !isLawyer) {
+      router.push("/unauthorized");
+    }
+  }, [session, authLoading, isLawyer, router]);
+
+  useEffect(() => {
+    if (authLoading || !user?.id || !isLawyer) return;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`)
       .then(res => res.json())
@@ -33,7 +42,7 @@ export default function LawyerManageProfilePage() {
       })
       .catch(err => console.error("Database tracking read failure:", err))
       .finally(() => setFetching(false));
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, isLawyer]);
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -50,7 +59,7 @@ export default function LawyerManageProfilePage() {
         body: JSON.stringify({
           ...profile,          
           ...formFields,        
-          userId: user.id, // 🔥 CRITICAL FIX: Explicitly pass user.id as the userId foreign key
+          userId: user.id, 
           hourlyRate: Number(formFields.fee), 
           isPaid: true,        
           isPublished: profile?.isPublished ?? false
@@ -61,8 +70,6 @@ export default function LawyerManageProfilePage() {
       if (data.success) {
         toast.success("Profile properties verified and updated.");
         setProfile(prev => ({ ...prev, ...formFields, fee: Number(formFields.fee) }));
-        
-        // Clean routing transition redirect
         router.push('/dashboard/lawyer');
       } else {
         toast.error(data.message || "Failed to update backend profile parameters.");
@@ -75,7 +82,7 @@ export default function LawyerManageProfilePage() {
     }
   };
 
-  if (authLoading || fetching) {
+  if (authLoading || fetching || !isLawyer) {
     return <div className="text-center py-12 text-xs text-zinc-500 font-mono">Syncing Database Workspace Profile Log...</div>;
   }
 

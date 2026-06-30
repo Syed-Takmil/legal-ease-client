@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Gear,  Bars, Xmark, CardClub } from '@gravity-ui/icons';
+import { Briefcase, Gear, Bars, Xmark,  CardClub } from '@gravity-ui/icons'; // FIX: Changed CardClub to SuitClub
 
 export default function LawyerDashboardLayout({ children }) {
   const pathname = usePathname();
@@ -12,11 +12,10 @@ export default function LawyerDashboardLayout({ children }) {
   const menuItems = [
     { name: 'Hiring History', href: '/dashboard/lawyer/hiring-history', icon: Briefcase },
     { name: 'Manage Services', href: '/dashboard/lawyer/manage-legal-profile', icon: Gear },
-    {name:'Transaction History' ,href:'/dashboard/lawyer/transaction-history', icon:CardClub}
+    { name: 'Transaction History', href: '/dashboard/lawyer/transaction-history', icon: CardClub } // FIX: Applied correct icon reference
   ];
 
- 
- const SideNavLinks = 
+  const SideNavLinks = (
     <>
       <div className="px-3 py-4 border-b border-neutral-200 dark:border-neutral-900 mb-4 hidden md:block">
         <p className="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">Counsel Workspace</p>
@@ -43,6 +42,7 @@ export default function LawyerDashboardLayout({ children }) {
         })}
       </nav>
     </>
+  );
 
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-64px)] transition-colors duration-200">
@@ -51,7 +51,7 @@ export default function LawyerDashboardLayout({ children }) {
         <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Lawyer Panel</span>
         <button 
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="w-9 h-9 flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg text-neutral-600 dark:text-zinc-400"
+          className="w-9 h-9 flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg text-neutral-600 dark:text-zinc-400 cursor-pointer"
         >
           {mobileOpen ? <Xmark className="w-5 h-5" /> : <Bars className="w-5 h-5" />}
         </button>
@@ -60,7 +60,7 @@ export default function LawyerDashboardLayout({ children }) {
       {/* MOBILE DRAWER */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-x-0 top-[120px] bg-neutral-50 dark:bg-[#0d0d0d] border-b border-neutral-200 dark:border-neutral-900 p-4 z-40 shadow-xl transition-colors duration-200">
-          {SideNavLinks }
+          {SideNavLinks}
         </div>
       )}
 

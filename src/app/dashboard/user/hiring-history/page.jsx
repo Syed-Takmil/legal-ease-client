@@ -11,33 +11,47 @@ export default function HiringHistoryPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
+  // Run validation unconditionally at the top level to adhere to Rules of Hooks
+  const hasUserRole = CheckRole("user");
+  const isUser = !authLoading && hasUserRole;
+
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState(null);
 
-  // Safe client-side role guard redirection
+  // Safe client-side role guard redirection loop
   useEffect(() => {
-    if (!authLoading && !CheckRole("user")) {
+    if (authLoading) return;
+
+    if (!session || !isUser) {
       router.push("/unauthorized");
     }
-  }, [authLoading, router]);
+  }, [session, authLoading, isUser, router]);
 
+  // Synchronize Inbound Client Data Records
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading || !user?.id || !isUser) return;
+
+    let isMounted = true;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/hires/user/${user.id}`)
       .then(res => res.json())
       .then(res => {
+        if (!isMounted) return;
         if (res.success) {
-          setHistory(res.data);
+          setHistory(res.data || []);
         }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching history:", err);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
-  }, [user?.id, authLoading]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, authLoading, isUser]);
 
   // Dynamic Stripe Trigger Handler
   const handlePayment = async (recordId) => {
@@ -54,26 +68,37 @@ export default function HiringHistoryPage() {
       
       const data = await res.json();
       if (data.url) {
+        // Leave payingId set to lock the UI button state while window unloads
         window.location.assign(data.url);
       } else {
         alert(data.error || "Failed to initialize payment gateway.");
+        setPayingId(null);
       }
     } catch (err) {
       console.error("Payment error:", err);
-    } finally {
       setPayingId(null);
     }
   };
 
   const getStatusStyle = (status) => {
-    if (status === 'accepted')
+    if (status === 'accepted' || status === 'active')
       return 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
     if (status === 'rejected')
       return 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60';
     return 'bg-gray-100 text-gray-600 border border-gray-300 dark:bg-zinc-900 dark:text-zinc-400 dark:border-neutral-800';
   };
 
-  const isDataLoading = authLoading || loading;
+  // Top-Level Security Gate: Eliminates dynamic screen flashing for unauthorized requests
+  if (authLoading || !isUser) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500">
+        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-mono uppercase tracking-wider">Validating Node Security...</p>
+      </div>
+    );
+  }
+
+  const isDataLoading = loading;
 
   return (
     <div className="space-y-6 bg-white text-black dark:bg-black p-6">
@@ -85,7 +110,7 @@ export default function HiringHistoryPage() {
       <div className="dark:bg-[#0d0d0d] bg-white border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
-            <thead className='bg-white dark:bg-black'>
+            <thead className="bg-white dark:bg-black">
               <tr className="border-b border-neutral-900 bg-white dark:bg-neutral-950 dark:text-zinc-400 font-medium text-xs tracking-wider uppercase">
                 <th className="p-4">Lawyer Info</th>
                 <th className="p-4">Specialization</th>
@@ -126,11 +151,15 @@ export default function HiringHistoryPage() {
                     <td className="p-4 text-right">
                       <button
                         onClick={() => handlePayment(record._id)}
-                        disabled={record.status !== 'accepted' || record.paid || payingId === record._id}
+                        disabled={
+                          (record.status !== 'accepted' && record.status !== 'active') || 
+                          record.paid || 
+                          payingId !== null
+                        }
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
                           record.paid
                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 cursor-default'
-                            : record.status === 'accepted'
+                            : (record.status === 'accepted' || record.status === 'active')
                             ? 'bg-orange-500 text-black hover:bg-orange-400 cursor-pointer'
                             : 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-zinc-600 cursor-not-allowed'
                         }`}

@@ -40,7 +40,6 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
         }
 
         const result = await res.json();
-console.log
         if (result?.success) {
           setLawyers(result.data);
         } else {

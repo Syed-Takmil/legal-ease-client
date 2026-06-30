@@ -5,22 +5,34 @@ import { Pencil, TrashBin } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
 import { toast } from 'react-toastify';
 import CheckRole from '@/app/lib/actions/CheckRole';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // FIX: Migrated from hard redirect to user router hooks
 
 export default function CommentsPage() {
+  const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
-      if(!CheckRole("user")){
-        redirect("/unauthorized")
-      }
+
+  // FIX 1: Run the validation hook unconditionally at the top level
+  const hasUserRole = CheckRole("user");
+  const isUser = !authLoading && hasUserRole;
+
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModalComment, setActiveModalComment] = useState(null);
   const [editText, setEditText] = useState('');
 
+  // FIX 2: Evaluate safety parameters safely within a useEffect loop
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!session || !isUser) {
+      router.push("/unauthorized");
+    }
+  }, [session, authLoading, isUser, router]);
+
   // Fetch comments specific to the authenticated client user node
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading || !user?.id || !isUser) return;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/comments?userId=${user.id}`)
       .then((res) => {
@@ -39,7 +51,7 @@ export default function CommentsPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, isUser]);
 
   const openEditModal = (comment) => {
     setActiveModalComment(comment);
@@ -86,7 +98,7 @@ export default function CommentsPage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !isUser) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500">
         <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
@@ -122,14 +134,14 @@ export default function CommentsPage() {
                 <button
                   type="button"
                   onClick={() => openEditModal(comment)}
-                  className="h-8 px-3 rounded-lg border border-neutral-800 text-zinc-400 hover:text-orange-400 hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1"
+                  className="h-8 px-3 rounded-lg border border-neutral-800 text-zinc-400 hover:text-orange-400 hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                 >
                   <Pencil className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDeleteComment(comment._id)}
-                  className="h-8 px-3 rounded-lg border border-neutral-800 text-zinc-400 hover:text-red-400 hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1"
+                  className="h-8 px-3 rounded-lg border border-neutral-800 text-zinc-400 hover:text-red-400 hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                 >
                   <TrashBin className="w-3.5 h-3.5" /> Delete
                 </button>
@@ -153,14 +165,14 @@ export default function CommentsPage() {
               <button
                 type="button"
                 onClick={() => setActiveModalComment(null)}
-                className="px-4 h-10 rounded-xl text-xs font-bold text-zinc-400 hover:bg-neutral-900 transition-colors"
+                className="px-4 h-10 rounded-xl text-xs font-bold text-zinc-400 hover:bg-neutral-900 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleUpdateComment}
-                className="px-4 h-10 bg-orange-500 hover:bg-orange-400 text-black font-bold text-xs tracking-wide rounded-xl shadow-md transition-colors"
+                className="px-4 h-10 bg-orange-500 hover:bg-orange-400 text-black font-bold text-xs tracking-wide rounded-xl shadow-md transition-colors cursor-pointer"
               >
                 Save Changes
               </button>
