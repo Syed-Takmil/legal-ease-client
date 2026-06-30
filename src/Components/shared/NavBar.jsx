@@ -1,8 +1,6 @@
-
-
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'; 
 import { 
@@ -23,6 +21,21 @@ export default function Navbar() {
   const user = session?.user;
   const userRole = user?.role;
   const path = usePathname();
+  
+  // State to manage the profile dropdown open/close behavior
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside of it
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const DashBoardLink = 
     userRole === "user" ? "/dashboard/user" : 
@@ -86,7 +99,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Search Bar (Wrapped in Suspense internally inside NavbarSearch) */}
+          {/* Desktop Search Bar */}
           <div className="navbar-center hidden md:flex lg:w-1/4 w-fit max-w-md">
             <NavbarSearch/>
           </div>
@@ -98,17 +111,46 @@ export default function Navbar() {
             <div className='hidden lg:block h-6 border-l border-neutral-200 dark:border-neutral-800'></div>
             {
               user && user.image ?
-              <div className='flex items-center gap-2'>
-                <Image 
-                  width={48} 
-                  height={48} 
-                  src={user.image} 
-                  alt='profile pic'
-                  className='rounded-full w-12 h-12 object-cover border border-neutral-200 dark:border-neutral-800 p-1'
-                />
-                <button onClick={handleLogout} className='btn rounded-xl bg-orange-600 hover:bg-orange-700 text-white border-none'>
-                  Sign Out <ArrowRightFromSquare/>
+              /* Profile Pic Dropdown Container */
+              <div className="relative" ref={dropdownRef}>
+                <button 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center focus:outline-none transition-transform active:scale-95"
+                  aria-haspopup="true"
+                  aria-expanded={isDropdownOpen}
+                >
+                  <Image 
+                    width={48} 
+                    height={48} 
+                    src={user.image} 
+                    alt='profile pic'
+                    className='rounded-full w-12 h-12 object-cover border border-neutral-200 dark:border-neutral-800 p-1 hover:border-orange-500 dark:hover:border-orange-500 transition-colors'
+                  />
                 </button>
+
+                {/* Dropdown Menu Overlay */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 mb-2">
+                      <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                        {user.name || 'User'}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                        {user.email}
+                      </p>
+                    </div>
+                    
+                    <div className="px-2">
+                      <button 
+                        onClick={handleLogout} 
+                        className='w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors'
+                      >
+                        Sign Out 
+                        <ArrowRightFromSquare className="w-4 h-4"/>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               :
               <div className='flex items-center gap-3 px-2 sm:px-0'>
@@ -129,7 +171,7 @@ export default function Navbar() {
             <Logo />
           </div>
           
-          {/* Mobile Search Input (Reused the responsive component) */}
+          {/* Mobile Search Input */}
           <div className="md:hidden w-full">
             <NavbarSearch />
           </div>

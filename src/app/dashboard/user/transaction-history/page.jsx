@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { authClient } from '@/app/lib/auth-client';
-import { CardDiamonds } from '@gravity-ui/icons';
-import CheckRole from '@/app/lib/actions/CheckRole';
+import { CardDiamond } from '@gravity-ui/icons';
 import { useRouter } from 'next/navigation';
 
 export default function UserTransactionHistoryPage() {
@@ -11,14 +10,13 @@ export default function UserTransactionHistoryPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  // FIX 1: Add the unconditional validation check at the top level
-  const hasUserRole = CheckRole("user");
-  const isUser = !authLoading && hasUserRole;
+  // Safely check user role
+  const isUser = !authLoading && user && user.role === 'user';
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // FIX 2: Client-side role enforcement loop
+  // Client-side route guard protection
   useEffect(() => {
     if (authLoading) return;
 
@@ -27,6 +25,7 @@ export default function UserTransactionHistoryPage() {
     }
   }, [session, authLoading, isUser, router]);
 
+  // Fetch the transactions using your synced endpoint structure
   useEffect(() => {
     if (authLoading || !user?.id || !isUser) return;
     let isMounted = true;
@@ -45,7 +44,6 @@ export default function UserTransactionHistoryPage() {
     return () => { isMounted = false; };
   }, [user?.id, authLoading, isUser]);
 
-  // FIX 3: Dynamic top-level loading block stops layout flashes for guest lookups
   if (authLoading || !isUser) {
     return (
       <div className="flex justify-center items-center min-h-[40vh] text-zinc-500 text-xs font-mono animate-pulse uppercase tracking-widest">
@@ -63,10 +61,17 @@ export default function UserTransactionHistoryPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-bold text-black dark:text-white">Your Payments Ledger</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Review licensing logs and retainer invoices assigned to your account profile.</p>
+    <div className="space-y-6 p-6 bg-white text-black dark:bg-black min-h-screen">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-black dark:text-white flex items-center gap-2">
+            <CardDiamond className="w-5 h-5 text-purple-500 animate-pulse" />
+            Your Payments Ledger
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Review licensing logs and retainer invoices assigned to your account profile.
+          </p>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-[#0d0d0d] border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
@@ -86,16 +91,24 @@ export default function UserTransactionHistoryPage() {
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-900 text-zinc-700 dark:text-zinc-300">
                 {transactions.map((tx) => (
                   <tr key={tx._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors">
-                    <td className="p-4 font-mono text-xs text-purple-500">{tx.stripeSessionId?.slice(-12) || tx._id}</td>
-                    <td className="p-4 text-xs font-medium">{tx.priceType === 'lawyer_license' ? 'Lifetime Placement License' : 'Retainer Consultation Deposit'}</td>
+                    {/* Maps flawlessly to transactionId string format from your backend */}
+                    <td className="p-4 font-mono text-xs text-purple-500">
+                      {tx.transactionId ? tx.transactionId.slice(-16) : tx._id}
+                    </td>
+                    <td className="p-4 text-xs font-medium">
+                      {tx.priceType === 'lawyer_license' 
+                        ? 'Lifetime Placement License' 
+                        : 'Retainer Consultation Deposit'}
+                    </td>
                     <td className="p-4 text-xs text-zinc-400 font-mono">
-                      {/* FIX 4: Secure date resolution protection check */}
                       {tx.createdAt 
                         ? new Date(tx.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })
                         : 'Recent'
                       }
                     </td>
-                    <td className="p-4 text-right font-bold text-black dark:text-white">${tx.amount}</td>
+                    <td className="p-4 text-right font-bold text-black dark:text-white">
+                      ${tx.amount}
+                    </td>
                   </tr>
                 ))}
               </tbody>

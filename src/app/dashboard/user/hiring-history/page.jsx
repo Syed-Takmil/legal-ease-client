@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { CardClub } from '@gravity-ui/icons'; 
 import { authClient } from '@/app/lib/auth-client';
-import CheckRole from '@/app/lib/actions/CheckRole';
 import { useRouter } from 'next/navigation';
 
 export default function HiringHistoryPage() {
@@ -11,8 +10,7 @@ export default function HiringHistoryPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  const hasUserRole = CheckRole("user");
-  const isUser = !authLoading && hasUserRole;
+  const isUser = !authLoading && user && user.role === 'user';
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,54 +23,75 @@ export default function HiringHistoryPage() {
     }
   }, [session, authLoading, isUser, router]);
 
-  useEffect(() => {
-    if (authLoading || !user?.id || !isUser) return;
-    let isMounted = true;
-
+  const fetchHiringHistory = () => {
+    if (!user?.id || !isUser) return;
     fetch(`${process.env.NEXT_PUBLIC_URL}/hires/user/${user.id}`)
       .then(res => res.json())
       .then(res => {
-        if (!isMounted) return;
         if (res.success) setHistory(res.data || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching history:", err);
-        if (isMounted) setLoading(false);
+        setLoading(false);
       });
+  };
 
-    return () => { isMounted = false; };
+  useEffect(() => {
+    if (authLoading) return;
+    fetchHiringHistory();
   }, [user?.id, authLoading, isUser]);
 
-  const handlePayment = async (recordId) => {
+  const handlePayment = async (record) => {
     try {
-      setPayingId(recordId);
-      
-      // FIX 2: Correct absolute path for Next.js Route Handlers inside the app directory
-      const res = await fetch('/api/checkout_sessions', {
+      setPayingId(record._id);
+
+      // 1. Hit your Payment API Node to update state tracking logs
+      const paymentRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceType: 'user_paying_lawyer',
-          metadata: { recordId: recordId }
+          lawyerId: record.lawyerId,
+          userId: user.id,
+          userEmail: user.email,
+          amount: record.fee,
+          hireId: record._id,
+          transactionId: `tx_mock_${Math.random().toString(36).substr(2, 9)}`
         })
       });
-      
-      const data = await res.json();
-      if (data.url) {
-        window.location.assign(data.url);
+
+      const paymentData = await paymentRes.json();
+
+      if (paymentData.success) {
+        // Refresh local array structure UI map nodes instantly
+        fetchHiringHistory();
+        
+        // 2. Redirect/Initialize global gateway if needed
+        const res = await fetch('/api/checkout_sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            priceType: 'user_paying_lawyer',
+            metadata: { recordId: record._id }
+          })
+        });
+        
+        const data = await res.json();
+        if (data.url) {
+          window.location.assign(data.url);
+        }
       } else {
-        alert(data.error || "Failed to initialize payment gateway.");
-        setPayingId(null);
+        alert(paymentData.message || "Failed to finalize database configuration entry.");
       }
     } catch (err) {
       console.error("Payment error:", err);
+    } finally {
       setPayingId(null);
     }
   };
 
   const getStatusStyle = (status) => {
-    if (status === 'accepted' || status === 'active')
+    if (status === 'accepted' || status === 'active' || status === 'paid')
       return 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
     if (status === 'rejected')
       return 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60';
@@ -125,7 +144,7 @@ export default function HiringHistoryPage() {
                     </td>
                     <td className="p-4 text-right">
                       <button
-                        onClick={() => handlePayment(record._id)}
+                        onClick={() => handlePayment(record)}
                         disabled={(record.status !== 'accepted' && record.status !== 'active') || record.paid || payingId !== null}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
                           record.paid

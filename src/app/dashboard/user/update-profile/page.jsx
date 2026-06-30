@@ -1,28 +1,38 @@
 'use client';
 
-import CheckRole from '@/app/lib/actions/CheckRole';
 import { authClient } from '@/app/lib/auth-client';
-import { redirect } from 'next/navigation';
-import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
 export default function UpdateProfilePage() {
+  const router = useRouter();
+  
+  // 1. Get the session directly here at the top level
+  const { data: session, isPending: authLoading } = authClient.useSession();
+  const user = session?.user;
+
   const [fullName, setFullName] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
-        if(!CheckRole("user")){
-          redirect("/unauthorized")
-        }
+  // 2. Safely process the redirect based on the top-level user data
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Check the role directly from the session's user object
+    if (!user || user.role !== 'user') {
+      router.push("/unauthorized");
+    }
+  }, [user, authLoading, router]);
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     
-    // Safely fallback to default image if left blank or cleared out
     const finalImageUrl = photoUrl.trim() ? photoUrl : '/profile.png';
 
     try {
-      // 1. Update the user profile info inside Better Auth
       const { data, error } = await authClient.updateUser({
         name: fullName,
         image: finalImageUrl,
@@ -34,12 +44,11 @@ export default function UpdateProfilePage() {
         return;
       }
 
-      // 2. Synchronize the data change with your Express backend API
       const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/users`, {
-        method: 'POST', // Changed to POST to match your backend upsert endpoint
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          userId: data?.user?.id || data?.id, // Passing user context reference to backend
+          userId: data?.user?.id || data?.id,
           name: fullName, 
           image: finalImageUrl 
         })
@@ -57,6 +66,8 @@ export default function UpdateProfilePage() {
       setSaving(false);
     }
   };
+
+  if (authLoading) return <div>Loading...</div>;
 
   return (
     <div className="max-w-xl space-y-6">

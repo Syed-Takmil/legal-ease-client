@@ -12,8 +12,6 @@ export default function LawyerDashboardHome() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  // FIX: Unconditionally execute the role checking evaluation at the top level 
-  // to adhere strictly to the Rules of Hooks.
   const hasLawyerRole = CheckRole("lawyer");
   const isLawyer = !authLoading && hasLawyerRole;
 
@@ -23,53 +21,73 @@ export default function LawyerDashboardHome() {
   const [licensing, setLicensing] = useState(false);
 
   useEffect(() => {
-    // FIX: Using the evaluated `isLawyer` boolean instead of calling CheckRole conditionally inside the hook
     if (!authLoading && !isLawyer) {
       router.push("/unauthorized");
     }
   }, [authLoading, isLawyer, router]);
 
-  useEffect(() => {
-    if (authLoading || !user?.id || !isLawyer) return;
-
-    let isMounted = true;
-
+  const loadDashboardData = () => {
+    if (!user?.id || !isLawyer) return;
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`).then(res => res.json()),
       fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${user.id}`).then(res => res.json())
     ])
       .then(([profileRes, hiresRes]) => {
-        if (!isMounted) return;
         if (profileRes.success) setProfile(profileRes.data);
         if (hiresRes.success) setHires(hiresRes.data || []);
       })
-      .catch(err => console.error("Error reading dashboard state parameters:", err))
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .catch(err => console.error("Error reading dashboard parameters:", err))
+      .finally(() => setLoading(false));
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    if (authLoading) return;
+    loadDashboardData();
   }, [user?.id, authLoading, isLawyer]);
 
   const handleLicensePayment = async (e) => {
     e.preventDefault();
     try {
       setLicensing(true);
-      const res = await fetch('/api/checkout_sessions', {
+
+      const trackingRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceType: 'lawyer_license' })
+        body: JSON.stringify({
+          lawyerId: user.id,
+          userId: user.id,
+          lawyerEmail: user.email,
+          amount: 149,
+          transactionId: `lic_${Math.random().toString(36).substr(2, 9)}`,
+          priceType: 'lawyer_license'
+        })
       });
-      const data = await res.json();
-      if (data.url) {
-        window.location.assign(data.url);
-      } else {
-        alert(data.error || "Failed to trigger licensing payment routing configuration.");
+
+      const trackingData = await trackingRes.json();
+
+      if (trackingData.success) {
+        await fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPaid: true })
+        });
+
+        // Instant local state updates disable user interaction completely
+        setProfile((prev) => prev ? { ...prev, isPaid: true } : { isPaid: true });
+        loadDashboardData();
+
+        const res = await fetch('/api/checkout_sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceType: 'lawyer_license' })
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.assign(data.url);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Licensing compilation fault:", err);
     } finally {
       setLicensing(false);
     }
@@ -108,10 +126,14 @@ export default function LawyerDashboardHome() {
           <form onSubmit={handleLicensePayment}>
             <button
               type="submit"
-              disabled={licensing}
-              className="w-full h-11 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              disabled={licensing || profile?.isPaid}
+              className={`w-full h-11 text-xs font-bold tracking-wider uppercase rounded-xl transition-all ${
+                profile?.isPaid 
+                  ? 'bg-emerald-600 text-white cursor-default opacity-100' 
+                  : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer disabled:opacity-50'
+              }`}
             >
-              {licensing ? 'Syncing Gateway...' : 'Secure Placement License'}
+              {licensing ? 'Syncing Gateway...' : profile?.isPaid ? 'Paid' : 'Secure Placement License'}
             </button>
           </form>
         </div>
@@ -199,10 +221,11 @@ export default function LawyerDashboardHome() {
                   <div className="flex items-center gap-4 justify-between sm:justify-end">
                     <span className="text-zinc-400 font-mono">${record.fee || 'Retainer'}</span>
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
-                      record.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400' :
+                      record.status === 'paid' || record.paid ? 'bg-emerald-500/10 text-emerald-400' :
+                      record.status === 'accepted' ? 'bg-blue-500/10 text-blue-400' :
                       record.status === 'rejected' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'
                     }`}>
-                      {record.status}
+                      {record.paid ? 'paid' : record.status}
                     </span>
                   </div>
                 </div>

@@ -1,21 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Briefcase, Comment, LayoutGrid, LayoutCellsLarge, Person, CardClub } from '@gravity-ui/icons';
+import { usePathname, useRouter } from 'next/navigation';
+import { Briefcase, Comment, Person, CardClub } from '@gravity-ui/icons';
+import { authClient } from '@/app/lib/auth-client';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, isPending: authLoading } = authClient.useSession();
+  const user = session?.user;
+
+  // Evaluate the user status inline cleanly
+  const isUser = !authLoading && user && user.role === 'user';
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Kick them out if no session exists or they don't have the right role
+    if (!session || !isUser) {
+      router.push("/unauthorized");
+    }
+  }, [session, authLoading, isUser, router]);
 
   const menuItems = [
-   
     { name: 'Hiring History', href: '/dashboard/user/hiring-history', icon: Briefcase },
     { name: 'Update Profile', href: '/dashboard/user/update-profile', icon: Person },
     { name: 'My Comments', href: '/dashboard/user/comments', icon: Comment },
-   { name: 'Transaction History', href: '/dashboard/user/transaction-history', icon: CardClub }
-    
+    { name: 'Transaction History', href: '/dashboard/user/transaction-history', icon: CardClub }
   ];
+
+  // While checking auth state, display a loading state to prevent layout flickering
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-zinc-500 text-xs font-mono animate-pulse uppercase tracking-widest">
+        Validating Security Node...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen h-full bg-white dark:bg-[#0a0a0a] text-neutral-200 flex pt-16">

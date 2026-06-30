@@ -3,26 +3,28 @@
 import React, { useEffect } from 'react';
 import { Hand, LayoutCellsLarge } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
-import CheckRole from '@/app/lib/actions/CheckRole';
 import { useRouter } from 'next/navigation';
 
 export default function UserDashboard() {
   const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
-  
-  const hasUserRole = CheckRole("user");
-  const isUser = !authLoading && hasUserRole;
+  console.log(user)
 
-  // ✅ FIXED: Route enforcement handled inside useEffect instead of throwing raw component errors
+  // Evaluate the user status inline cleanly
+  const isUser = !authLoading && user && user.role === 'user';
+
   useEffect(() => {
     if (authLoading) return;
+
+    // Redirect if unauthorized
     if (!session || !isUser) {
       router.push("/unauthorized");
     }
   }, [session, authLoading, isUser, router]);
 
-  if (authLoading || !isUser) {
+  // While loading or if session isn't validated yet, show the loader safely
+  if (authLoading || !session || !isUser) {
     return (
       <div className="flex justify-center items-center min-h-[40vh] text-zinc-500 text-xs font-mono animate-pulse uppercase tracking-widest">
         Validating Security Node...

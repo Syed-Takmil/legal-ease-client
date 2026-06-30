@@ -188,7 +188,7 @@ export default function LawyerDetailPage() {
 
         {loading ? (
           /* ==================================================================== */
-          /* PREMIUM LAYOUT SKELETON PLACEHOLDERS                                  */
+          /* PREMIUM LAYOUT SKELETON PLACEHOLDERS                                 */
           /* ==================================================================== */
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start animate-pulse">
             
@@ -300,14 +300,14 @@ export default function LawyerDetailPage() {
 
                 <button 
                   onClick={handleConsultationRequest}
-                  disabled={lawyer.status === 'Busy' || hiring}
+                  disabled={!user || lawyer.status === 'Busy' || hiring}
                   className={`w-full sm:w-auto px-6 h-12 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 shadow-sm ${
-                    lawyer.status === 'Busy'
+                    (!user || lawyer.status === 'Busy')
                       ? 'bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-neutral-400 dark:text-zinc-600 cursor-not-allowed'
                       : 'bg-orange-500 hover:bg-orange-600 text-white font-medium hover:shadow-lg hover:shadow-orange-500/10'
                   }`}
                 >
-                  {lawyer.status === 'Busy' ? 'Currently Retained / Busy' : hiring ? 'Processing Request...' : 'Request Consultation'}
+                  {!user ? 'Login to Request' : lawyer.status === 'Busy' ? 'Currently Retained / Busy' : hiring ? 'Processing Request...' : 'Request Consultation'}
                 </button>
               </div>
 
@@ -379,9 +379,7 @@ export default function LawyerDetailPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-neutral-900 dark:text-white">{comment.userName}</span>
                           <div className="flex gap-0.5 text-amber-500">
-                            {Array.from({ length: comment.rating }).map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-amber-500" />
-                            ))}
+                            <Star className="w-3 h-3 fill-amber-500" /> {comment.rating}
                           </div>
                         </div>
                         <p className="text-sm text-neutral-700 dark:text-zinc-400 leading-relaxed whitespace-pre-line">

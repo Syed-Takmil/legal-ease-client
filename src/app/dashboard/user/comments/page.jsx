@@ -4,24 +4,22 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, TrashBin } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
 import { toast } from 'react-toastify';
-import CheckRole from '@/app/lib/actions/CheckRole';
-import { useRouter } from 'next/navigation'; // FIX: Migrated from hard redirect to user router hooks
+import { useRouter } from 'next/navigation';
 
 export default function CommentsPage() {
   const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  // FIX 1: Run the validation hook unconditionally at the top level
-  const hasUserRole = CheckRole("user");
-  const isUser = !authLoading && hasUserRole;
+  // FIX 1: Safely evaluate user role inline using the top-level session state
+  const isUser = !authLoading && user && user.role === 'user';
 
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModalComment, setActiveModalComment] = useState(null);
   const [editText, setEditText] = useState('');
 
-  // FIX 2: Evaluate safety parameters safely within a useEffect loop
+  // FIX 2: Evaluate safety routing within the useEffect hook
   useEffect(() => {
     if (authLoading) return;
 
@@ -104,7 +102,6 @@ export default function CommentsPage() {
       const result = await res.json();
 
       if (result.success) {
-        // Remove the targeted comment item out of the active state array smoothly
         setComments(comments.filter((comment) => comment._id !== id));
         toast.success("Review retracted cleanly.");
       } else {

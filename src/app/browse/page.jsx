@@ -1,6 +1,3 @@
-
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -29,12 +26,18 @@ export default function BrowseLawyersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [sortBy, setSortBy] = useState('default');
-const baseUrl = process.env.NEXT_PUBLIC_URL ;
+
+  // Pagination Local States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Adjust this number to control how many elements show up per page
+
+  const baseUrl = process.env.NEXT_PUBLIC_URL ;
+
   useEffect(() => {
     const fetchLawyers = async () => {
       try {
         setLoading(true);
-         const res = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });       
+        const res = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });       
         if (!res.ok) {
           throw new Error(`Server responded with status: ${res.status}`);
         }
@@ -57,6 +60,11 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
     fetchLawyers();
   }, []);
 
+  // Reset to page 1 whenever filters change to avoid out-of-bounds empty arrays
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
   // Filter logic remains reactive and clean
   const filteredLawyers = lawyers.filter(lawyer => {
     const matchesSearch = 
@@ -77,6 +85,12 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
     return 0;
   });
 
+  // Pagination slicing metrics
+  const totalPages = Math.ceil(sortedLawyers.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLawyers = sortedLawyers.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-black dark:text-neutral-200 p-4 sm:p-8 pt-24">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -92,11 +106,11 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
         </div>
 
         {/* Controls */}
-        <div className="flex  flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-[#0d0d0d] border border-gray-300 dark:border-neutral-800 p-4 rounded-xl shadow-md w-full">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-[#0d0d0d] border border-gray-300 dark:border-neutral-800 p-4 rounded-xl shadow-md w-full">
           
           {/* Search box */}
           <div className="relative w-full md:max-w-md">
-            <span className=" w-5 h-5  absolute border-3 border-black bott left-7 flex items-center pl-3 pointer-events-none cursor-crosshair text-zinc-500">
+            <span className=" w-5 h-5 absolute border-3 border-black bott left-7 flex items-center pl-3 pointer-events-none cursor-crosshair text-zinc-500">
               <Magnifier className="bg-black border-black text-black w-5 h-5" />
             </span>
             <input 
@@ -113,7 +127,7 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
             <select 
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="select w-sm text-black bg-white dark:bg-neutral-950 border border-gray-300 dark:border-neutral-800 text-sm h-10 rounded-lg  dark:text-zinc-300 focus:border-orange-500 focus:outline-none px-3"
+              className="select w-sm text-black bg-white dark:bg-neutral-950 border border-gray-300 dark:border-neutral-800 text-sm h-10 rounded-lg dark:text-zinc-300 focus:border-orange-500 focus:outline-none px-3"
             >
               {SPECIALIZATIONS.map((spec) => (
                 <option key={spec} value={spec}>{spec}</option>
@@ -159,10 +173,33 @@ const baseUrl = process.env.NEXT_PUBLIC_URL ;
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {sortedLawyers.map((lawyer) => (
-              <LawyerCard key={lawyer._id || lawyer.id} lawyer={lawyer} />
-            ))}
+          /* Render sliced data array and Radio input pagination styling */
+          <div className="space-y-8 flex flex-col items-center">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+              {currentLawyers.map((lawyer) => (
+                <LawyerCard key={lawyer._id || lawyer.id} lawyer={lawyer} />
+              ))}
+            </div>
+
+            {/* DaisyUI Radio-styled Button Group Pagination */}
+            {totalPages > 1 && (
+              <div className="join border border-gray-300 dark:border-neutral-800 bg-white dark:bg-[#0d0d0d] rounded-lg shadow-sm">
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNumber = index + 1;
+                  return (
+                    <input
+                      key={pageNumber}
+                      type="radio"
+                      name="options"
+                      aria-label={String(pageNumber)}
+                      className="join-item btn btn-square btn-sm checked:bg-orange-500 checked:!text-white dark:text-neutral-200"
+                      checked={currentPage === pageNumber}
+                      onChange={() => setCurrentPage(pageNumber)}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
