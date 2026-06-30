@@ -4,11 +4,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { TrashBin, ShieldCheck } from '@gravity-ui/icons';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { redirect } from 'next/navigation';
+import { authClient } from '@/app/lib/auth-client';
 
 export default function AdminManageUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+   const {data:session,isPending}=authClient.useSession();
+   const user=session?.user;
+    useEffect(() => {
+      if (!isPending) {
+        if (!session || session.user?.role !== "admin") {
+          redirect("/unauthorized");
+        }
+      }
+    }, [session, isPending]);
   // Fetch users array from the Express server node
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_URL}/users`)

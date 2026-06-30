@@ -4,7 +4,6 @@
 import Image from "next/image";
 
 export default function TopExperts({ experts }) {
-    console.log(experts)
   // If the data hasn't loaded OR if the array is completely empty, show skeletons
   if (!experts || experts.length === 0) {
     return (

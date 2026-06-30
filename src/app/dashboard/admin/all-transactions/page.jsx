@@ -1,25 +1,42 @@
+
 'use client';
 
+import { authClient } from '@/app/lib/auth-client';
+import { redirect } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 export default function AdminTransactionsLedgerPage() {
+  const { data: session, isPending } = authClient.useSession();
   const [txns, setTxns] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Auth and Data Fetching Logic
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}admin/transactions`)
-      .then(res => res.json())
-      .then(res => {
-        if (res.success && Array.isArray(res.data)) {
-          setTxns(res.data);
-        }
+    if (isPending) return;
+
+    // Security Check
+    if (!session || session.user?.role !== "admin") {
+      redirect("/unauthorized");
+    }
+
+    // Fetch Transactions
+    const fetchTransactions = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/admin/transactions`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        
+        const result = await res.json();
+        // Assuming your API returns { success: true, data: [...] }
+        setTxns(result.data || []);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error logging database ledger:", err);
-        setLoading(false);
-      });
-  }, []);
+      }
+    };
+
+    fetchTransactions();
+  }, [session, isPending]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Pending';
@@ -27,8 +44,10 @@ export default function AdminTransactionsLedgerPage() {
     return isNaN(parsedDate.getTime()) ? 'Pending' : parsedDate.toLocaleDateString();
   };
 
+  if (isPending) return <div className="p-10">Loading security protocols...</div>;
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4">
+     <div className="space-y-6 max-w-7xl mx-auto p-4">
       <div>
         <h1 className="text-xl font-bold text-neutral-900 dark:text-white">Financial Audit Clearinghouse</h1>
         <p className="text-xs text-zinc-500 mt-0.5">Cross-examine continuous system-wide retainment transaction captures from database storage.</p>

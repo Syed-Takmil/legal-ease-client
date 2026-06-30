@@ -1,6 +1,8 @@
 'use client';
 
+import CheckRole from '@/app/lib/actions/CheckRole';
 import { authClient } from '@/app/lib/auth-client';
+import { redirect } from 'next/navigation';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -9,6 +11,9 @@ export default function UpdateProfilePage() {
   const [photoUrl, setPhotoUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
+        if(!CheckRole("user")){
+          redirect("/unauthorized")
+        }
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);

@@ -9,15 +9,17 @@ import TopExperts from "@/Components/TopExperts";
 
 // Server-side database fetching
 async function getHomepageData() {
-  const baseUrl = process.env.NEXT_PUBLIC_URL ;
+  const baseUrl = process.env.NEXT_PUBLIC_URL;
   try {
-    // Fetch once since both sections are consuming the /lawyers collection
     const res = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });
-    const dataArray= await res.json();
+    const response = await res.json(); // This is the object: { success: true, data: [...] }
+    
+    // Extract the array safely
+    const lawyers = Array.isArray(response?.data) ? response.data : [];
     
     return {
-      featured: dataArray, 
-      topExperts: dataArray // Passed down cleanly to be sliced safely inside the component
+      featured: lawyers, 
+      topExperts: lawyers 
     };
   } catch (err) {
     console.error("Failed to parse upstream cluster data vectors:", err);
@@ -27,7 +29,6 @@ async function getHomepageData() {
 
 export default async function Home() {
   const { featured, topExperts } = await getHomepageData();
-
   return (
     <div className="space-y-20 pb-24 bg-white dark:bg-black text-neutral-800 dark:text-neutral-200 transition-colors duration-200">
       {/* HERO BANNER SECTION */}

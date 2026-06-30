@@ -1,8 +1,22 @@
 'use client';
 
+import { authClient } from '@/app/lib/auth-client';
+import { redirect } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 export default function AdminAnalyticsDashboardPage() {
+  const { data: session, isPending } = authClient.useSession();
+  
+  // 1. Wait until loading is finished
+  // 2. Then check if user is logged in and is an admin
+  useEffect(() => {
+    if (!isPending) {
+      if (!session || session.user?.role !== "admin") {
+        redirect("/unauthorized");
+      }
+    }
+  }, [session, isPending]);
+
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
     totalLawyers: 0,
@@ -12,19 +26,27 @@ export default function AdminAnalyticsDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_URL}/admin/analytics-summary`)
-      .then(res => res.json())
-      .then(res => {
-        if (res.success && res.data) {
-          setMetrics(res.data);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching analytics statistics:", err);
-        setLoading(false);
-      });
-  }, []);
+    // Only fetch if session exists
+    if (!isPending && session?.user?.role === "admin") {
+      fetch(`${process.env.NEXT_PUBLIC_URL}/admin/analytics-summary`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.success && res.data) {
+            setMetrics(res.data);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching analytics:", err);
+          setLoading(false);
+        });
+    }
+  }, [session, isPending]);
+
+  // Show a simple loading state while checking auth
+  if (isPending) {
+    return <div className="p-10">Authenticating...</div>;
+  }
 
   const cardConfig = [
     { label: 'Total Registered Users', value: metrics.totalUsers, format: (v) => v.toLocaleString() },
@@ -34,6 +56,7 @@ export default function AdminAnalyticsDashboardPage() {
   ];
 
   return (
+  
     <div className="space-y-6 max-w-6xl mx-auto p-4">
       <div>
         <h1 className="text-xl font-bold text-neutral-900 dark:text-white">System Performance Engine</h1>

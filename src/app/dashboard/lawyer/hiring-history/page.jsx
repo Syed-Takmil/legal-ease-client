@@ -3,10 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Xmark } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { redirect } from 'next/navigation';
 
 export default function LawyerHiringHistoryPage() {
+  if(!CheckRole("lawyer")){
+  redirect("/unauthorized")
+}
   const { data: session, isPending: authLoading } = authClient.useSession();
   const lawyer = session?.user;
+
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);

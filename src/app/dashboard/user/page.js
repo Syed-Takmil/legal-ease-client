@@ -3,10 +3,15 @@
 import React from 'react';
 import {  Hand, LayoutCellsLarge } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { redirect } from 'next/navigation';
 
 export default function UserDashboard() {
  const {data:session,isPending}=authClient.useSession();
       const user = session?.user;
+      if(!CheckRole("user")){
+        redirect("/unauthorized")
+      }
   return (
     <div className="space-y-6 bg-white min-h-screen dark:bg-black">
       {/* WELCOME BANNER HEADLINE */}

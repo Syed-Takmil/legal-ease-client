@@ -4,22 +4,28 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { authClient } from '@/app/lib/auth-client';
 import { CreditCard, ShieldCheck, Briefcase, Star, Eye } from '@gravity-ui/icons';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { useRouter } from 'next/navigation';
 
 export default function LawyerDashboardHome() {
-  // Get authentication state
+  const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
-  // State Management
-  const [profile, setProfile] = useState(null); // Added this to store lawyer DB info
+  const [profile, setProfile] = useState(null); 
   const [hires, setHires] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [licensing, setLicensing] = useState(false);
 
   useEffect(() => {
-    // If auth is loading or we don't have a user ID, don't fetch data yet
+    if (!authLoading && !CheckRole("lawyer")) {
+      router.push("/unauthorized");
+    }
+  }, [authLoading, router]);
+
+  useEffect(() => {
     if (authLoading || !user?.id) return;
 
-    // Fetch profile and case allocation logs simultaneously using user.id
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_URL}/lawyers/${user.id}`).then(res => res.json()),
       fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${user.id}`).then(res => res.json())
@@ -32,7 +38,28 @@ export default function LawyerDashboardHome() {
       .finally(() => setLoading(false));
   }, [user?.id, authLoading]);
 
-  // SCREEN 1: Loading State
+  const handleLicensePayment = async (e) => {
+    e.preventDefault();
+    try {
+      setLicensing(true);
+      const res = await fetch('/api/checkout_sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceType: 'lawyer_license' })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.assign(data.url);
+      } else {
+        alert(data.error || "Failed to trigger licensing payment routing configuration.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLicensing(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2 text-zinc-500">
@@ -42,7 +69,6 @@ export default function LawyerDashboardHome() {
     );
   }
 
-  // GATE 1: Check database profile directly to see if they paid
   if (!profile?.isPaid) {
     return (
       <div className="max-w-xl mx-auto py-8 space-y-6">
@@ -64,14 +90,13 @@ export default function LawyerDashboardHome() {
             <div className="text-3xl font-black text-purple-400 pt-3">$149<span className="text-xs text-zinc-500 font-normal"> / fixed license</span></div>
           </div>
 
-          {/* Native HTML Form to route through payment processing */}
-          <form action="/api/checkout_sessions" method="POST">
+          <form onSubmit={handleLicensePayment}>
             <button
               type="submit"
-              role="link"
-              className="w-full h-11 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer"
+              disabled={licensing}
+              className="w-full h-11 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer disabled:opacity-50"
             >
-              Secure Placement License
+              {licensing ? 'Syncing Gateway...' : 'Secure Placement License'}
             </button>
           </form>
         </div>
@@ -79,7 +104,6 @@ export default function LawyerDashboardHome() {
     );
   }
 
-  // GATE 2: They paid, but checking if profile configuration is empty
   if (!profile?.specialization) {
     return (
       <div className="max-w-md mx-auto py-12 text-center space-y-5">
@@ -100,9 +124,8 @@ export default function LawyerDashboardHome() {
     );
   }
 
-  // FULL WORKSPACE: Active, Verified Lawyer View (Passed both Gates)
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">Counsel Center: Advocate Node</h1>
@@ -116,7 +139,6 @@ export default function LawyerDashboardHome() {
         </div>
       </div>
 
-      {/* Overview Analytics Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-xl p-5 space-y-1">
           <div className="flex items-center justify-between text-zinc-500">
@@ -144,7 +166,6 @@ export default function LawyerDashboardHome() {
         </div>
       </div>
 
-      {/* Ongoing History Table Module */}
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Hiring System History Records</h3>
         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-xl overflow-hidden">

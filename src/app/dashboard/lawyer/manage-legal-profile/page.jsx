@@ -4,10 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { PencilToLine } from '@gravity-ui/icons';
 import Image from 'next/image';
 import { authClient } from '@/app/lib/auth-client';
+import { redirect } from 'next/navigation';
+import CheckRole from '@/app/lib/actions/CheckRole';
 
 export default function LawyerManageProfilePage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
+
+  if(!CheckRole("lawyer")){
+    redirect("/unauthorized")
+  }
 
   const [profile, setProfile] = useState(null);
   const [saving, setSaving] = useState(false);

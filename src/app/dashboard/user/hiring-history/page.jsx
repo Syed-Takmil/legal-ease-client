@@ -3,16 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import { CardClub } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { useRouter } from 'next/navigation';
 
 export default function HiringHistoryPage() {
+  const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingId, setPayingId] = useState(null);
+
+  // Safe client-side role guard redirection
+  useEffect(() => {
+    if (!authLoading && !CheckRole("user")) {
+      router.push("/unauthorized");
+    }
+  }, [authLoading, router]);
 
   useEffect(() => {
-    // Wait until auth state is confirmed and user data is present
     if (authLoading || !user?.id) return;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/hires/user/${user.id}`)
@@ -29,21 +39,44 @@ export default function HiringHistoryPage() {
       });
   }, [user?.id, authLoading]);
 
-const getStatusStyle = (status) => {
-  if (status === 'accepted')
-    return 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
+  // Dynamic Stripe Trigger Handler
+  const handlePayment = async (recordId) => {
+    try {
+      setPayingId(recordId);
+      const res = await fetch('/api/checkout_sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceType: 'user_paying_lawyer',
+          metadata: { recordId: recordId }
+        })
+      });
+      
+      const data = await res.json();
+      if (data.url) {
+        window.location.assign(data.url);
+      } else {
+        alert(data.error || "Failed to initialize payment gateway.");
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+    } finally {
+      setPayingId(null);
+    }
+  };
 
-  if (status === 'rejected')
-    return 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60';
+  const getStatusStyle = (status) => {
+    if (status === 'accepted')
+      return 'bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
+    if (status === 'rejected')
+      return 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60';
+    return 'bg-gray-100 text-gray-600 border border-gray-300 dark:bg-zinc-900 dark:text-zinc-400 dark:border-neutral-800';
+  };
 
-  return 'bg-gray-100 text-gray-600 border border-gray-300 dark:bg-zinc-900 dark:text-zinc-400 dark:border-neutral-800';
-};
-
-  // Keep the component loading while authentication is initializing
   const isDataLoading = authLoading || loading;
 
   return (
-    <div className="space-y-6 bg-white text-black  dark:bg-black">
+    <div className="space-y-6 bg-white text-black dark:bg-black p-6">
       <div>
         <h1 className="text-xl font-bold text-black dark:text-white">Hiring Registry</h1>
         <p className="text-xs text-zinc-500 mt-0.5">Track case status updates and process counselor payments.</p>
@@ -91,22 +124,21 @@ const getStatusStyle = (status) => {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-  <button
-    disabled={
-      record.status !== 'accepted' || record.paid
-    }
-    className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
-      record.paid
-        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 cursor-default'
-        : record.status === 'accepted'
-        ? 'bg-orange-500 text-black hover:bg-orange-400'
-        : 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-zinc-600 cursor-not-allowed'
-    }`}
-  >
-    <CardClub className="w-3.5 h-3.5" />
-    {record.paid ? 'Paid' : 'Pay Now'}
-  </button>
-</td>
+                      <button
+                        onClick={() => handlePayment(record._id)}
+                        disabled={record.status !== 'accepted' || record.paid || payingId === record._id}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide inline-flex items-center gap-1.5 transition-all ${
+                          record.paid
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 cursor-default'
+                            : record.status === 'accepted'
+                            ? 'bg-orange-500 text-black hover:bg-orange-400 cursor-pointer'
+                            : 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-zinc-600 cursor-not-allowed'
+                        }`}
+                      >
+                        <CardClub className="w-3.5 h-3.5" />
+                        {payingId === record._id ? 'Routing...' : record.paid ? 'Paid' : 'Pay Now'}
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}

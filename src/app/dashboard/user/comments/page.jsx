@@ -4,11 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, TrashBin } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
 import { toast } from 'react-toastify';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { redirect } from 'next/navigation';
 
 export default function CommentsPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
-
+      if(!CheckRole("user")){
+        redirect("/unauthorized")
+      }
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModalComment, setActiveModalComment] = useState(null);

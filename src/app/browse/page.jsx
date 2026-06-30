@@ -29,21 +29,18 @@ export default function BrowseLawyersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [sortBy, setSortBy] = useState('default');
-
+const baseUrl = process.env.NEXT_PUBLIC_URL ;
   useEffect(() => {
     const fetchLawyers = async () => {
       try {
         setLoading(true);
-        
-        // Using native fetch instead of axios
-        const response = await fetch('http://localhost:5000/lawyers');
-        
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
+         const res = await fetch(`${baseUrl}/lawyers`, { cache: 'no-store' });       
+        if (!res.ok) {
+          throw new Error(`Server responded with status: ${res.status}`);
         }
 
-        const result = await response.json();
-
+        const result = await res.json();
+console.log
         if (result?.success) {
           setLawyers(result.data);
         } else {

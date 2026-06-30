@@ -11,7 +11,7 @@ const CheckRole = (role) => {
 
     if(!user) return false;
 
-    if(role!==realRole) return false
+    if(role!==realRole) return false;
     return true
 };
 
