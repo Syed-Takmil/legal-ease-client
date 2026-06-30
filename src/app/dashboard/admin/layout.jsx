@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChartPie, CreditCard, ShieldCheck, Bars, Xmark } from '@gravity-ui/icons';
+import { ChartPie, CreditCard, ShieldCheck, Bars, Xmark, CardDiamond } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
 
 export default function AdminDashboardLayout({ children }) {
@@ -26,6 +26,7 @@ export default function AdminDashboardLayout({ children }) {
     { name: 'Analytics Overview', href: '/dashboard/admin/analytics', icon: ChartPie },
     { name: 'All Transactions', href: '/dashboard/admin/all-transactions', icon: CreditCard },
     { name: 'Manage Users', href: '/dashboard/admin/manage-users', icon: ShieldCheck },
+    { name: 'Transaction History', href: '/dashboard/admin/transaction-history', icon: CardDiamond },
   ];
 
   // Shield Content UI rendering if unauthorized
