@@ -3,16 +3,32 @@
 import React, { useState, useEffect } from 'react';
 import { authClient } from '@/app/lib/auth-client';
 import { CardDiamonds } from '@gravity-ui/icons';
+import CheckRole from '@/app/lib/actions/CheckRole';
+import { useRouter } from 'next/navigation';
 
 export default function UserTransactionHistoryPage() {
+  const router = useRouter();
   const { data: session, isPending: authLoading } = authClient.useSession();
   const user = session?.user;
+
+  // FIX 1: Add the unconditional validation check at the top level
+  const hasUserRole = CheckRole("user");
+  const isUser = !authLoading && hasUserRole;
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // FIX 2: Client-side role enforcement loop
   useEffect(() => {
-    if (authLoading || !user?.id) return;
+    if (authLoading) return;
+
+    if (!session || !isUser) {
+      router.push("/unauthorized");
+    }
+  }, [session, authLoading, isUser, router]);
+
+  useEffect(() => {
+    if (authLoading || !user?.id || !isUser) return;
     let isMounted = true;
 
     fetch(`${process.env.NEXT_PUBLIC_URL}/transactions/user/${user.id}`)
@@ -27,9 +43,18 @@ export default function UserTransactionHistoryPage() {
       });
 
     return () => { isMounted = false; };
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, isUser]);
 
-  if (authLoading || loading) {
+  // FIX 3: Dynamic top-level loading block stops layout flashes for guest lookups
+  if (authLoading || !isUser) {
+    return (
+      <div className="flex justify-center items-center min-h-[40vh] text-zinc-500 text-xs font-mono animate-pulse uppercase tracking-widest">
+        Validating Ledger Security...
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[40vh] text-zinc-500 text-xs font-mono animate-pulse uppercase tracking-widest">
         Syncing Payment Ledger...
@@ -63,7 +88,13 @@ export default function UserTransactionHistoryPage() {
                   <tr key={tx._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors">
                     <td className="p-4 font-mono text-xs text-purple-500">{tx.stripeSessionId?.slice(-12) || tx._id}</td>
                     <td className="p-4 text-xs font-medium">{tx.priceType === 'lawyer_license' ? 'Lifetime Placement License' : 'Retainer Consultation Deposit'}</td>
-                    <td className="p-4 text-xs text-zinc-400 font-mono">{new Date(tx.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</td>
+                    <td className="p-4 text-xs text-zinc-400 font-mono">
+                      {/* FIX 4: Secure date resolution protection check */}
+                      {tx.createdAt 
+                        ? new Date(tx.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })
+                        : 'Recent'
+                      }
+                    </td>
                     <td className="p-4 text-right font-bold text-black dark:text-white">${tx.amount}</td>
                   </tr>
                 ))}

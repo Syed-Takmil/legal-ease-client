@@ -11,18 +11,17 @@ export default function LawyerHiringHistoryPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const lawyer = session?.user;
 
-  // FIX: Unconditionally execute the role checking hook at the top level
+  // Unconditionally execute the role checking hook at the top level
   const hasLawyerRole = CheckRole("lawyer");
   const isLawyer = !authLoading && hasLawyerRole;
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fixed Security Check Routing Loop
+  // 1. Security Check Routing Loop
   useEffect(() => {
     if (authLoading) return;
 
-    // FIX: Checked against the calculated `isLawyer` boolean state instead of executing hook conditionally
     if (!session || !isLawyer) {
       router.push("/unauthorized");
     }
@@ -30,7 +29,6 @@ export default function LawyerHiringHistoryPage() {
 
   // 2. Clear Inbound Requests Data Sync
   useEffect(() => {
-    // FIX: Using the evaluated state configuration variables safely here
     if (authLoading || !lawyer?.id || !isLawyer) return;
 
     let isMounted = true;

@@ -3,34 +3,41 @@
 import React, { useEffect } from 'react';
 import { Hand, LayoutCellsLarge } from '@gravity-ui/icons';
 import { authClient } from '@/app/lib/auth-client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // FIX: Swapped out raw redirect hook
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   
-  // Safely extract user
   const user = session?.user;
+  const isAdmin = !isPending && user?.role === "admin";
 
   useEffect(() => {
-    if (!isPending) {
-      if (!session || user?.role !== "admin") {
-        redirect("/unauthorized");
-      }
-    }
-  }, [session, isPending, user]);
+    if (isPending) return;
 
-  // Loading state to prevent rendering before session check
-  if (isPending) return <div className="p-10">Loading Dashboard...</div>;
+    if (!session || !isAdmin) {
+      router.push("/unauthorized");
+    }
+  }, [session, isPending, isAdmin, router]);
+
+  // Loading state gate guarantees user profile string elements can't parse un-evaluated fields
+  if (isPending || !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500 min-h-[40vh]">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-mono uppercase tracking-wider">Loading Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 bg-white min-h-screen dark:bg-black p-6">
       {/* WELCOME BANNER HEADLINE */}
-      <div className='flex items-center text-black dark:text-orange-400 text-3xl gap-5'>
-        <span className='p-2.5 rounded-xl bg-orange-500/10 dark:text-orange-400 border border-orange-500/10'>
+      <div className="flex items-center text-black dark:text-orange-400 text-3xl gap-5">
+        <span className="p-2.5 rounded-xl bg-orange-500/10 dark:text-orange-400 border border-orange-500/10">
           <Hand />
         </span>
-        {/* Now user is defined */}
-        <div>Welcome Back, ADMIN @{user?.name || 'User'}!!</div>
+        <div className="font-sans font-bold">Welcome Back, ADMIN @{user?.name || 'User'}!!</div>
       </div>
 
       <div className="flex items-center gap-3">

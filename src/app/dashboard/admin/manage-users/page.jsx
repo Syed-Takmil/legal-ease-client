@@ -1,43 +1,54 @@
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { TrashBin, ShieldCheck } from '@gravity-ui/icons';
-import CheckRole from '@/app/lib/actions/CheckRole';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // FIX: Swapped out raw redirect for router instance
 import { authClient } from '@/app/lib/auth-client';
 
 export default function AdminManageUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-   const {data:session,isPending}=authClient.useSession();
-   const user=session?.user;
-    useEffect(() => {
-      if (!isPending) {
-        if (!session || session.user?.role !== "admin") {
-          redirect("/unauthorized");
-        }
-      }
-    }, [session, isPending]);
-  // Fetch users array from the Express server node
+  const { data: session, isPending } = authClient.useSession();
+  const currentAdmin = session?.user; // FIX: Avoid variable name collisions with map iteration loops
+  const isAdmin = !isPending && currentAdmin?.role === "admin";
+
+  // 1. Structural Security Routing Guard Loop
   useEffect(() => {
+    if (isPending) return;
+
+    if (!session || !isAdmin) {
+      router.push("/unauthorized");
+    }
+  }, [session, isPending, isAdmin, router]);
+
+  // 2. Fetch Users Array with Mount and Security Boundaries
+  useEffect(() => {
+    if (isPending || !isAdmin) return;
+
+    let isMounted = true;
+
     fetch(`${process.env.NEXT_PUBLIC_URL}/users`)
       .then(res => res.json())
       .then(res => {
+        if (!isMounted) return;
         if (res.success && Array.isArray(res.data)) {
           setUsers(res.data);
         } else if (Array.isArray(res)) {
-          setUsers(res); // Fallback if data array is sent un-nested
+          setUsers(res);
         }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching user indexes:", err);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPending, isAdmin]);
 
   const handleChangeRole = async (userId, currentRole) => {
     const nextRole = currentRole === 'user' ? 'lawyer' : currentRole === 'lawyer' ? 'admin' : 'user';
@@ -62,6 +73,12 @@ export default function AdminManageUsersPage() {
   };
 
   const handleDeleteUser = async (userId) => {
+    // Safety check: Prevent self-deletion via administration workspace loop
+    if (userId === currentAdmin?.id) {
+      alert("Action Denied: You cannot delete your own active session profile root node.");
+      return;
+    }
+
     if (!confirm('DANGER: Irreversibly delete this user account from cluster index files?')) return;
 
     try {
@@ -79,6 +96,16 @@ export default function AdminManageUsersPage() {
       console.error(err); 
     }
   };
+
+  // 3. Complete Security Render Gate to eliminate component flashing
+  if (isPending || !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500 min-h-[40vh]">
+        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-mono uppercase tracking-wider">Verifying Identity Rights...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4">
@@ -112,36 +139,41 @@ export default function AdminManageUsersPage() {
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
-                  <tr key={user._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors">
+                users.map((profile) => (
+                  <tr key={profile._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors">
                     <td className="p-4 font-bold text-neutral-900 dark:text-white">
-                      {user.name || 'Anonymous User'}
+                      {profile.name || 'Anonymous User'}
                     </td>
                     <td className="p-4 text-neutral-600 dark:text-zinc-400 text-xs font-mono">
-                      {user.email}
+                      {profile.email}
                     </td>
                     <td className="p-4">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-md ${
-                        user.role === 'admin' ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/50' :
-                        user.role === 'lawyer' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/50' :
+                        profile.role === 'admin' ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/50' :
+                        profile.role === 'lawyer' ? 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/50' :
                         'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-zinc-400 border-neutral-200 dark:border-neutral-800'
                       }`}>
-                        {user.role}
+                        {profile.role || 'user'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => handleChangeRole(user._id, user.role)}
+                          onClick={() => handleChangeRole(profile._id, profile.role)}
                           className="h-8 px-3 rounded-lg border border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         >
                           <ShieldCheck className="w-3.5 h-3.5" /> Toggle Role
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="h-8 px-3 rounded-lg border border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                          onClick={() => handleDeleteUser(profile._id)}
+                          disabled={profile._id === currentAdmin?.id}
+                          className={`h-8 px-3 rounded-lg border text-xs font-bold transition-all inline-flex items-center gap-1 ${
+                            profile._id === currentAdmin?.id
+                              ? 'border-neutral-200 dark:border-neutral-900 text-neutral-300 dark:text-zinc-700 cursor-not-allowed opacity-50'
+                              : 'border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 cursor-pointer'
+                          }`}
                         >
                           <TrashBin className="w-3.5 h-3.5" /> Delete
                         </button>

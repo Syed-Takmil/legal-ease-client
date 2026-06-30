@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Comment, LayoutGrid, LayoutCellsLarge, Person } from '@gravity-ui/icons';
+import { Briefcase, Comment, LayoutGrid, LayoutCellsLarge, Person, CardClub } from '@gravity-ui/icons';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Hiring History', href: '/dashboard/user/hiring-history', icon: Briefcase },
     { name: 'Update Profile', href: '/dashboard/user/update-profile', icon: Person },
     { name: 'My Comments', href: '/dashboard/user/comments', icon: Comment },
-        { name: 'Transaction History', href: '/dashboard/lawyer/transaction-history', icon: CardClub }
+   { name: 'Transaction History', href: '/dashboard/lawyer/transaction-history', icon: CardClub }
     
   ];
 

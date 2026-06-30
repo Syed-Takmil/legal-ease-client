@@ -60,7 +60,7 @@ export default function CommentsPage() {
 
   // PUT: Update statement route mapping sync
   const handleUpdateComment = async () => {
-    if (!editText.trim() || !user?.id) return;
+    if (!editText.trim() || !user?.id || !activeModalComment?._id) return;
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/comments/update/${activeModalComment._id}`, {
@@ -87,14 +87,32 @@ export default function CommentsPage() {
     }
   };
 
-  // optional placeholder deletion hook if needed down the road
+  // DELETE: Integrated securely with the backend delete node structure
   const handleDeleteComment = async (id) => {
     if (!confirm('Confirm definitive removal of this review statement?')) return;
+    if (!user?.id) return;
+
     try {
-      // You can implement an app.delete('/comments/:id') in your backend when ready
-      toast.info("Delete integration can be completed matching this node configuration.");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/comments/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: user.id // Passing the authenticated user ID to match backend validation checks
+        })
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        // Remove the targeted comment item out of the active state array smoothly
+        setComments(comments.filter((comment) => comment._id !== id));
+        toast.success("Review retracted cleanly.");
+      } else {
+        toast.error(result.message || "Failed to complete deletion request.");
+      }
     } catch (err) { 
       console.error(err); 
+      toast.error("Network communication pipeline error.");
     }
   };
 

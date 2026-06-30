@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Gear, Bars, Xmark,  CardClub } from '@gravity-ui/icons'; // FIX: Changed CardClub to SuitClub
+import { Briefcase, Gear, Bars, Xmark, CardClub, } from '@gravity-ui/icons';
 
 export default function LawyerDashboardLayout({ children }) {
   const pathname = usePathname();

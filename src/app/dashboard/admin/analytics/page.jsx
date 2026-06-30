@@ -1,21 +1,15 @@
 'use client';
 
 import { authClient } from '@/app/lib/auth-client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // FIX: Replaced raw redirect with router hook
 import React, { useState, useEffect } from 'react';
 
 export default function AdminAnalyticsDashboardPage() {
+  const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   
-  // 1. Wait until loading is finished
-  // 2. Then check if user is logged in and is an admin
-  useEffect(() => {
-    if (!isPending) {
-      if (!session || session.user?.role !== "admin") {
-        redirect("/unauthorized");
-      }
-    }
-  }, [session, isPending]);
+  // Clean, unconditional role assessment at the top level
+  const isAdmin = !isPending && session?.user?.role === "admin";
 
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
@@ -25,38 +19,59 @@ export default function AdminAnalyticsDashboardPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // 1. Structural Security Routing Guard Loop
   useEffect(() => {
-    // Only fetch if session exists
-    if (!isPending && session?.user?.role === "admin") {
-      fetch(`${process.env.NEXT_PUBLIC_URL}/admin/analytics-summary`)
-        .then(res => res.json())
-        .then(res => {
-          if (res.success && res.data) {
-            setMetrics(res.data);
-          }
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("Error fetching analytics:", err);
-          setLoading(false);
-        });
-    }
-  }, [session, isPending]);
+    if (isPending) return;
 
-  // Show a simple loading state while checking auth
-  if (isPending) {
-    return <div className="p-10">Authenticating...</div>;
+    if (!session || !isAdmin) {
+      router.push("/unauthorized");
+    }
+  }, [session, isPending, isAdmin, router]);
+
+  // 2. Data Fetching Sync with Component Unmount Guard
+  useEffect(() => {
+    if (isPending || !isAdmin) return;
+    
+    let isMounted = true;
+
+    fetch(`${process.env.NEXT_PUBLIC_URL}/admin/analytics-summary`)
+      .then(res => res.json())
+      .then(res => {
+        if (!isMounted) return;
+        if (res.success && res.data) {
+          setMetrics(res.data);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching analytics:", err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session, isPending, isAdmin]);
+
+  // 3. Complete Security Render Gate to eliminate layout flashing
+  if (isPending || !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500 min-h-[40vh]">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-mono uppercase tracking-wider">Authenticating...</p>
+      </div>
+    );
   }
 
+  // Configured with rigid defensive programming fallbacks to stop crash risks on null/undefined numbers
   const cardConfig = [
-    { label: 'Total Registered Users', value: metrics.totalUsers, format: (v) => v.toLocaleString() },
-    { label: 'Accredited Attorneys', value: metrics.totalLawyers, format: (v) => v.toLocaleString() },
-    { label: 'Successful Retainers', value: metrics.totalHires, format: (v) => v.toLocaleString() },
-    { label: 'Gross Platform Revenue', value: metrics.totalRevenue, format: (v) => `$${v.toLocaleString()}`, highlight: true },
+    { label: 'Total Registered Users', value: metrics.totalUsers, format: (v) => Number(v || 0).toLocaleString() },
+    { label: 'Accredited Attorneys', value: metrics.totalLawyers, format: (v) => Number(v || 0).toLocaleString() },
+    { label: 'Successful Retainers', value: metrics.totalHires, format: (v) => Number(v || 0).toLocaleString() },
+    { label: 'Gross Platform Revenue', value: metrics.totalRevenue, format: (v) => `$${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, highlight: true },
   ];
 
   return (
-  
     <div className="space-y-6 max-w-6xl mx-auto p-4">
       <div>
         <h1 className="text-xl font-bold text-neutral-900 dark:text-white">System Performance Engine</h1>
