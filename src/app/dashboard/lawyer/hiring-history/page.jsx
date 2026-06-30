@@ -11,14 +11,13 @@ export default function LawyerHiringHistoryPage() {
   const { data: session, isPending: authLoading } = authClient.useSession();
   const lawyer = session?.user;
 
-  // Unconditionally execute the role checking hook at the top level
   const hasLawyerRole = CheckRole("lawyer");
   const isLawyer = !authLoading && hasLawyerRole;
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Security Check Routing Loop
+  // Security Check Redirect Guard
   useEffect(() => {
     if (authLoading) return;
 
@@ -27,20 +26,27 @@ export default function LawyerHiringHistoryPage() {
     }
   }, [session, authLoading, isLawyer, router]);
 
-  // 2. Clear Inbound Requests Data Sync
+  // Clean Inbound Requests Data Sync
   useEffect(() => {
+    // Crucial safeguard: Exit compilation if parameters aren't parsed out yet
     if (authLoading || !lawyer?.id || !isLawyer) return;
 
     let isMounted = true;
+    
+    // Dynamically sanitizes any trailing slash configurations automatically
+    const baseUrl = process.env.NEXT_PUBLIC_URL?.replace(/\/$/, "");
 
-    fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/${lawyer.id}`)
-      .then(res => res.json())
+    fetch(`${baseUrl}/hires/lawyer/${lawyer.id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Network production response rejected");
+        return res.json();
+      })
       .then(res => {
         if (!isMounted) return;
         if (res.success) setRequests(res.data || []);
       })
       .catch((err) => {
-        console.error("Error syncing requests:", err);
+        console.error("Production Data Error:", err);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -56,7 +62,8 @@ export default function LawyerHiringHistoryPage() {
     if (!confirm(`Are you sure you want to ${confirmationText} this hiring request?`)) return;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/hires/lawyer/action/${requestId}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_URL?.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/hires/lawyer/action/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: decision }) 
@@ -73,6 +80,9 @@ export default function LawyerHiringHistoryPage() {
   };
 
   const isDataLoading = authLoading || loading;
+
+  // Don't render layout components if unauthenticated to prevent flashing content
+  if (!authLoading && (!session || !isLawyer)) return null;
 
   return (
     <div className="space-y-6 bg-white text-black dark:bg-black dark:text-white p-6">
