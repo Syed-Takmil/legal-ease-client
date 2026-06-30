@@ -8,7 +8,8 @@ import {
   Bars, 
   House,
   PlanetEarth,
-  Dice4
+  Dice4,
+  ChevronDown
 } from '@gravity-ui/icons';
 import NavLink from './NavLink';
 import { authClient } from '@/app/lib/auth-client';
@@ -22,31 +23,95 @@ export default function Navbar() {
   const userRole = user?.role;
   const path = usePathname();
   
-  // State to manage the profile dropdown open/close behavior
+  // State to manage dropdown behaviors
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDashDropdownOpen, setIsDashDropdownOpen] = useState(false);
+  
   const dropdownRef = useRef(null);
+  const dashDropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside of it
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      if (dashDropdownRef.current && !dashDropdownRef.current.contains(event.target)) {
+        setIsDashDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const DashBoardLink = 
-    userRole === "user" ? "/dashboard/user" : 
-    userRole === "admin" ? "/dashboard/admin" : 
-    "/dashboard/lawyer";
+  // Helper to generate sub-navigation based on role
+  const getDashboardLinks = (role) => {
+    switch(role) {
+      case 'user':
+        return [
+          { name: 'Hiring History', href: '/dashboard/user/hiring-history' },
+          { name: 'Update Profile', href: '/dashboard/user/update-profile' },
+          { name: 'Comment Management', href: '/dashboard/user/comments' },
+          { name: 'Transaction History', href: '/dashboard/user/transaction-history' },
+        ];
+      case 'lawyer':
+        return [
+          { name: 'Hiring History', href: '/dashboard/lawyer/hiring-history' },
+          { name: 'Manage Profile', href: '/dashboard/lawyer/manage-legal-profile' },
+          { name: 'Transaction History', href: '/dashboard/lawyer/transaction-history' },
+        ];
+      case 'admin':
+        return [
+          { name: 'Manage Users', href: '/dashboard/admin/manage-users' },
+          { name: 'All Transactions', href: '/dashboard/admin/all-transactions' },
+          { name: 'Analytics', href: '/dashboard/admin/analytics' },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const roleDashboardLinks = getDashboardLinks(userRole);
 
   const links = (
     <>
       <NavLink href={'/'}>Home</NavLink>
       <NavLink href={'/browse'}>Browse Lawyers</NavLink>
-      <NavLink href={DashBoardLink}>DashBoard</NavLink>
+      
+      {/* Desktop Dashboard Dropdown */}
+      {user && roleDashboardLinks.length > 0 && (
+        <div className="relative" ref={dashDropdownRef}>
+          <button 
+            onClick={() => setIsDashDropdownOpen(!isDashDropdownOpen)}
+            className={`flex items-center gap-1 font-medium transition-colors cursor-pointer ${path.startsWith('/dashboard') ? 'text-orange-600 dark:text-orange-500' : 'hover:text-orange-600'}`}
+          >
+            Dashboard <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDashDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isDashDropdownOpen && (
+            <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl py-2 z-50">
+              <Link 
+                href={userRole === 'admin' ? '/dashboard/admin/analytics' : `/dashboard/${userRole}`}
+                onClick={() => setIsDashDropdownOpen(false)}
+                className="block px-4 py-2 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+              >
+                Overview ({userRole})
+              </Link>
+              <div className="border-t border-neutral-100 dark:border-neutral-800 my-1"></div>
+              {roleDashboardLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsDashDropdownOpen(false)}
+                  className={`block px-4 py-2 text-sm transition-colors ${path === link.href ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-500 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'}`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 
@@ -54,22 +119,37 @@ export default function Navbar() {
     <>
       <Link 
         href={'/'}
-        className={`flex gap-2 rounded-xl p-2 justify-items-center items-center ${path === '/' ? 'bg-base-300 text-orange-600 dark:text-orange-500 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-600 dark:hover:text-orange-500'}`}
+        className={`flex gap-2 rounded-xl p-2 items-center ${path === '/' ? 'bg-base-300 text-orange-600 dark:text-orange-500 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-600 dark:hover:text-orange-500'}`}
       > 
         <House/> Home
       </Link>
       <Link 
         href={'/browse'}
-        className={`flex rounded-xl gap-2 p-2 justify-items-center items-center ${path === '/browse' ? 'bg-base-300 text-orange-600 dark:text-orange-500 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-500 hover:bg-base-300'}`}
+        className={`flex rounded-xl gap-2 p-2 items-center ${path === '/browse' ? 'bg-base-300 text-orange-600 dark:text-orange-500 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-500 hover:bg-base-300'}`}
       >  
         <PlanetEarth/> Browse Lawyers
       </Link>
-      <Link 
-        href={DashBoardLink}
-        className={`flex rounded-xl gap-2 p-2 justify-items-center items-center ${path.startsWith('/dashboard') ? 'text-orange-600 dark:text-orange-500 bg-base-300 font-medium' : 'text-neutral-700 dark:text-neutral-300 hover:text-orange-500 hover:bg-base-300'}`}
-      >
-        <Dice4/> DashBoard
-      </Link>
+
+      {/* Mobile Responsive Accordion Menu for Dashboard */}
+      {user && roleDashboardLinks.length > 0 && (
+        <div className="space-y-1">
+          <div className={`flex rounded-xl gap-2 p-2 items-center text-neutral-700 dark:text-neutral-300 ${path.startsWith('/dashboard') ? 'bg-base-300 font-medium' : ''}`}>
+            <Dice4/> <span>Dashboard ({userRole})</span>
+          </div>
+          <ul className="pl-6 space-y-1 border-l-2 border-neutral-200 dark:border-neutral-800 ml-4">
+            {roleDashboardLinks.map((link) => (
+              <li key={link.href}>
+                <Link 
+                  href={link.href}
+                  className={`block p-2 text-sm rounded-lg transition-colors ${path === link.href ? 'text-orange-600 dark:text-orange-500 font-medium bg-neutral-100 dark:bg-neutral-900' : 'text-neutral-600 dark:text-neutral-400 hover:text-orange-500'}`}
+                >
+                  {link.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 
@@ -105,7 +185,7 @@ export default function Navbar() {
           </div>
 
           <div className="navbar-end lg:w-2/4 gap-4">
-            <div className="hidden lg:flex items-center gap-4 text-neutral-700 dark:text-neutral-300">
+            <div className="hidden lg:flex items-center gap-6 text-neutral-700 dark:text-neutral-300">
               {links}
             </div>
             <div className='hidden lg:block h-6 border-l border-neutral-200 dark:border-neutral-800'></div>
@@ -176,9 +256,9 @@ export default function Navbar() {
             <NavbarSearch />
           </div>
 
-          <ul className="space-y-1 text-lg grid">
+          <div className="space-y-3 text-lg">
             {sideLinks}
-          </ul>
+          </div>
         </div>
       </div>
     </div>
